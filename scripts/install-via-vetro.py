@@ -32,6 +32,34 @@ def request(base, path, payload=None, timeout=60):
         return json.load(response)
 
 
+def download_latest_full_package(destination):
+    request = urllib.request.Request(
+        "https://api.github.com/repos/Knikt/APL-Launcher-for-TizenOS/releases/latest",
+        headers={"Accept": "application/vnd.github+json", "User-Agent": "APL-Launcher-Vetro-Installer"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        release = json.load(response)
+    candidates = [
+        asset for asset in release.get("assets", [])
+        if re.fullmatch(r"apl-launcher-full-v[0-9]+\.[0-9]+\.[0-9]+\.wgt", asset.get("name", ""))
+    ]
+    if len(candidates) != 1:
+        raise RuntimeError(f"Latest release {release.get('tag_name', '(unknown)')} does not have exactly one full WGT")
+    asset = candidates[0]
+    digest = asset.get("digest", "")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        raise RuntimeError("GitHub release has no valid SHA-256 digest for the full WGT")
+    download = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "APL-Launcher-Vetro-Installer"})
+    with urllib.request.urlopen(download, timeout=120) as response, open(destination, "wb") as output:
+        shutil.copyfileobj(response, output)
+    actual = hashlib.sha256(Path(destination).read_bytes()).hexdigest()
+    if actual != digest.removeprefix("sha256:"):
+        Path(destination).unlink(missing_ok=True)
+        raise RuntimeError("Downloaded full WGT does not match GitHub's SHA-256 digest")
+    print(f"Downloaded and verified {asset['name']} from release {release['tag_name']}.")
+    return Path(destination)
+
+
 def exec_vetro(base, command, timeout=60):
     result = request(base, "/exec", {"cmd": command}, timeout)
     if not result.get("ok"):
@@ -122,7 +150,7 @@ def sign_package(source, destination, duid, signer):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("tv_ip", help="TV IPv4 address (Vetro must be reachable on port 8099)")
-    parser.add_argument("package", type=Path, help="Full hybrid release .wgt package (default-signed or Partner-signed)")
+    parser.add_argument("package", nargs="?", type=Path, help="Full hybrid release .wgt package (omit to fetch and verify the latest full release package)")
     parser.add_argument("--vetro-port", type=int, default=8099, help="Vetro HTTP port (default: 8099)")
     parser.add_argument("--configure", action="store_true", help="Privately enter API keys and personal websites before signing and installing")
     parser.add_argument("--duid", help="TV DUID covered by the Partner certificate (required with --configure)")
@@ -133,10 +161,16 @@ def main():
         parser.error("Vetro port must be between 1 and 65535")
     if not re.fullmatch(r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}", args.tv_ip):
         parser.error("TV address must be an IPv4 address")
-    if not args.package.is_file() or args.package.suffix.lower() != ".wgt":
+    if args.package and (not args.package.is_file() or args.package.suffix.lower() != ".wgt"):
         parser.error("package must be an existing .wgt file")
 
     package_path = args.package
+    download_temp = None
+    if package_path is None:
+        download_temp = tempfile.TemporaryDirectory(prefix="apl-latest-full-")
+        atexit.register(download_temp.cleanup)
+        package_path = download_latest_full_package(Path(download_temp.name) / "latest-full.wgt")
+
     temporary = None
     if args.configure:
         if not args.duid:
@@ -151,7 +185,7 @@ def main():
         atexit.register(temporary.cleanup)
         customized = Path(temporary.name) / "customized.wgt"
         signed = Path(temporary.name) / "signed.wgt"
-        create_configured_wgt(args.package, customized, settings)
+        create_configured_wgt(package_path, customized, settings)
         sign_package(customized, signed, args.duid, signer)
         package_path = signed
 
@@ -167,7 +201,10 @@ def main():
         if not re.fullmatch(r"APLauncher(?:\.[A-Za-z0-9_.-]+)?", app_id) or not re.fullmatch(r"[A-Za-z0-9_.+-]+", version):
             raise RuntimeError("WGT contains an unexpected app ID or version")
         if "tizen-manifest.xml" not in archive.namelist():
-            raise RuntimeError("Use the full hybrid package (not the launcher-only WGT)")
+            raise RuntimeError("Use the full hybrid WGT with APL Overlay, not the launcher-only WGT")
+        manifest = archive.read("tizen-manifest.xml").decode("utf-8")
+        if 'appid="APLauncher.Overlay"' not in manifest or "bin/APLOverlay.dll" not in archive.namelist():
+            raise RuntimeError("WGT is missing APL Overlay; use apl-launcher-full-vX.Y.Z.wgt")
     base = f"http://{args.tv_ip}:{args.vetro_port}"
     status = request(base, "/status", timeout=10)
     if not (status.get("agent") or {}).get("connected"):
