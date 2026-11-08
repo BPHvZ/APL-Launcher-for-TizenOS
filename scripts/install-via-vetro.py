@@ -39,8 +39,24 @@ def exec_vetro(base, command, timeout=60):
     return str(result.get("output", ""))
 
 
+def keychain_request(action, service, value=None):
+    helper = Path(__file__).with_name("keychain.swift")
+    if sys.platform != "darwin" or not helper.is_file():
+        return None
+    payload = {"action": action, "service": service}
+    if value is not None:
+        payload["value"] = value
+    result = subprocess.run(
+        ["swift", str(helper)], input=json.dumps(payload), text=True,
+        capture_output=True,
+    )
+    if result.returncode:
+        raise RuntimeError("macOS Keychain operation failed; no API key was displayed")
+    return json.loads(result.stdout)
+
+
 def collect_settings():
-    print("Optional API keys (press Return at a prompt to skip it):")
+    print("Optional API keys (press Return to reuse the saved macOS Keychain value or skip):")
     print("  TMDB: use the API Key (v3 auth), not the API Read Access Token.")
     print("        https://www.themoviedb.org/settings/api")
     print("  YouTube: enable YouTube Data API v3 in Google Cloud, then create an API key.")
@@ -50,9 +66,17 @@ def collect_settings():
     print("        https://fanart.tv/get-an-api-key/")
     keys = {}
     for field, label in (("tmdb", "TMDB API Key (v3 auth)"), ("youtube", "YouTube Data API v3 key"), ("fanart", "Fanart.tv API key")):
-        value = getpass(f"{label} API key (press Enter to skip): ").strip()
+        saved = ""
+        if sys.platform == "darwin":
+            result = keychain_request("get", f"com.knikt.apl-launcher.{field}")
+            saved = result.get("value", "") if result else ""
+        hint = " (saved in macOS Keychain)" if saved else ""
+        typed = getpass(f"{label}{hint}; Enter to reuse/skip, or type a replacement: ").strip()
+        value = typed or saved
         if value and not re.fullmatch(r"[A-Za-z0-9._-]{1,512}", value):
-            raise ValueError(f"{label} key contains unsupported characters")
+            raise ValueError(f"{label} contains unsupported characters")
+        if typed and sys.platform == "darwin":
+            keychain_request("set", f"com.knikt.apl-launcher.{field}", typed)
         keys[field] = value
 
     sites = []
