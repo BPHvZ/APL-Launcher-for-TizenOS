@@ -34,14 +34,31 @@
     var ROOT_KEY = "apl.webos.root", rootFns = [];
     P.rooted = (function () { try { return global.localStorage.getItem(ROOT_KEY) === "1"; } catch (e) { return false; } })();
     P.onRoot = function (fn) { rootFns.push(fn); fn(P.rooted); };
-    P.service("status", {}).then(function (m) {
-        var r = !!m.root;
-        try { global.localStorage.setItem(ROOT_KEY, r ? "1" : "0"); } catch (e) {}
-        if (r) readHome();
-        if (r === P.rooted) return;
-        P.rooted = r;
-        rootFns.forEach(function (fn) { try { fn(r); } catch (e) {} });
-    }, function () {});
+    /* Just after an update of the launcher, its service starts without root, and apl-keep-root.sh (webos/root)
+       gives it back within seconds, with your keys and fonts put back into the package: the page looks again
+       for a few minutes, and reloads once when root comes back, so it has them all. */
+    var rootTries = 0, startedRooted = null;
+    function readRoot() {
+        P.service("status", {}).then(function (m) {
+            var r = !!m.root;
+            try { global.localStorage.setItem(ROOT_KEY, r ? "1" : "0"); } catch (e) {}
+            if (startedRooted === null) startedRooted = r;
+            if (r) readHome();
+            if (!r && ++rootTries < 12) setTimeout(readRoot, 15000);
+            if (r && !startedRooted) {
+                var again = false;
+                try { again = global.sessionStorage.getItem("apl.webos.rootReload") !== "1"; global.sessionStorage.setItem("apl.webos.rootReload", "1"); } catch (e) {}
+                if (again) { setTimeout(function () { global.location.reload(); }, 500); return; }
+            }
+            if (r === P.rooted) return;
+            P.rooted = r;
+            rootFns.forEach(function (fn) { try { fn(r); } catch (e) {} });
+        }, function () { if (++rootTries < 12) setTimeout(readRoot, 15000); });
+    }
+    readRoot();
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden && !P.rooted && rootTries >= 12) { rootTries = 0; readRoot(); }
+    });
     /* Home: APL Launcher or LG's own (webos/root/bin/apl-home.sh), Settings › General & Privacy */
     P.home = null;
     function readHome() {
