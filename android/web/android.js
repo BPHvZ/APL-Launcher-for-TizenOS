@@ -381,6 +381,8 @@
             return B.launchWith(String(id), key, String(params[key])) ? Promise.resolve() : fail(T("Can't launch the app"));
         },
         packages: { setPackageInfoEventListener: function (l) { pkgListener = l; } },
+        /* Delete App: Android's own Uninstall? question (B.uninstall, through the launcher's /components/action) */
+        canDelete: function () { return !!B.uninstall; },
         /* The launcher's own tiles: no Sources yet; Smart Hub becomes the device's own home */
         virtualApps: function (list) {
             return list.filter(function (v) { return v.id !== "apl.sources"; }).map(function (v) {

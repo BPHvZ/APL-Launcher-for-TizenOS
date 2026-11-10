@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2
+- **LG: Delete App.** Hold OK on an app, then *Delete App*, as on Samsung: on a rooted TV, for every app LG itself lets you delete (TF1+, M6+, france.tv, Rakuten TV…). LG's system apps (LG Channels, Alexa…) don't offer it. Since Home opens APL Launcher, LG's own menu to delete apps was out of reach. Tried on an LG OLED G5: TF1+ and M6+ deleted in 3 s each.
+- **LG: root kept after every update.** Updating the launcher (from the Homebrew Channel, APL Launcher Setup or ares-install) took root away from its service until the next restart: no picture settings, no closing of apps, and Guide gave a black screen. A watcher started at every boot (`apl-keep-root.sh`) gives root back within seconds, and puts back the files a public package can't have: the SF Pro fonts, your API keys, your avatars. Run the root install once more (APL Launcher Setup, or the one command in the README) to get it.
+- **LG: Guide always opens the Control Center**, even when the launcher's service isn't there to catch it: no more black screen.
+- **Android TV: Delete App was missing** from the menu when holding OK on an app. It opens Android's own *Uninstall?* question again.
+
 ## 1.1.1
 - **Android TV: your API keys without rebuilding the app.** The published `.apk` has none and can't be changed on a PC (it is signed with APL Launcher's own key), so the Top Shelf had no trending films, series or videos there. The app now keeps them itself: type them on the TV (*Settings › Appearance › Top Shelf › Online Services*, Android's keyboard or the Google TV app on a phone; a TMDB key is checked right away and a refused one never replaces the one there), or let APL Launcher Setup send them over adb (its *Install* page now has the key fields for Android TV too; only adb and the system may send them). Tried in the emulator: the Setup's script gave the published `.apk` its three keys, and YouTube's Top Shelf showed what is trending.
 - **APL TV's Continue Watching and Last Channel on Android TV**, as on Samsung and LG: APL TV hands them to APL Launcher itself (it needs the next APL TV `.apk`), and OK on a card opens APL TV right in the film, at its minute, or on the channel. Tried in the emulator: Sintel came back at 5:28 of 14:48, and the channel played.

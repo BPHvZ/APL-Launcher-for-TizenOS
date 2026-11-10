@@ -36,6 +36,8 @@ window.APL_LANG_FR = {
     "Deleting “{name}”…": "Suppression de « {name} »…",
     "“{name}” was deleted": "« {name} » a été supprimée",
     "Couldn't delete “{name}” (system app, or Vetro stopped). You can hide it.": "Impossible de supprimer « {name} » (app système, ou Vetro arrêté). Tu peux la masquer.",
+    "“{name}” is part of the TV's system and can't be deleted. You can hide it.": "« {name} » fait partie du système de la TV et ne peut pas être supprimée. Tu peux la masquer.",
+    "Couldn't delete “{name}”. You can hide it.": "Impossible de supprimer « {name} ». Tu peux la masquer.",
     "Move the app with the arrows, then press OK": "Déplace l'app avec les flèches, puis appuie sur OK",
     "Tip: ⏯ opens Control Center, and Home twice shows open apps": "Astuce : ⏯ ouvre le Centre de contrôle, et 2 fois Home les apps ouvertes",
     "Connection": "Connexions",

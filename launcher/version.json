@@ -1,8 +1,8 @@
 {
- "version": "1.1.1",
+ "version": "1.1.2",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Android TV: APL TV's Continue Watching and your API keys in the Top Shelf, and a name or a key can be typed again; the launcher's own sounds and the Memoji in the packages",
+ "notes": "LG: Delete App, root kept after every update, and Guide always opens the Control Center; Android: Delete App is back",
  "scripts": [
   "js/diag.js",
   "js/webos.js",

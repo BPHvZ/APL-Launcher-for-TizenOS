@@ -211,6 +211,7 @@
                 name: site ? siteName(lp) : String(lp.title || id),
                 icon: site ? null : iconUrl(lp),          // a site's icon is a tiny favicon: its letter and colour instead
                 accent: lp.bgColor || null,
+                removable: !site && lp.removable === true,      // LG lets it be deleted (Delete App, rooted TV)
                 params: lp.params && Object.keys(lp.params).length ? lp.params : null
             });
         });
@@ -249,6 +250,7 @@
             return order(list.map(function (a) {
                 var d = decorate(a);
                 d.params = a.params;
+                d.removable = !!a.removable;
                 return d;
             }));
         }
@@ -371,6 +373,17 @@
         launch: launch,
         loadApps: loadApps, launchApp: launchApp, isInstalled: isInstalled, openUrl: openUrl,
         cachedApps: function () { return appsCache || []; },
+        /* Delete App: on a rooted TV, the apps LG lets you delete (webos/service "remove", up to 40 s) */
+        canDelete: function (app) { return !!(app && app.removable && APL.platform.rooted); },
+        deleteApp: function (app) {
+            var a = null;
+            (appsCache || []).forEach(function (x) { if (x.id === app.id) a = x; });
+            return lunaOnce(SVC + "remove", { id: a && a.launchId || app.id }, 60000).then(function () {
+                appsCache = (appsCache || []).filter(function (x) { return x.id !== app.id; });
+                save(APPS_STORE, appsCache);
+                fetchApps().catch(function () {});
+            });
+        },
         /* The App Switcher leaves out LG's own apps that the TV keeps preloaded (LG Channels): never opened by you */
         notInSwitcher: function (id) { return LG_OWN.indexOf(id) !== -1; },
         blurAhead: true,                      // the grid's blurred picture prepared before the grid opens (launcher.js)

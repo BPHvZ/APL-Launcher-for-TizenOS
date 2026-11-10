@@ -1345,8 +1345,9 @@
         if (app.id !== "apl.settings") {
             items.push({ label: APL.t("Hide App"), icon: "eyeOff", run: function () { hideApp(app); } });
         }
-        // Deleted through Vetro: on another TV system (LG), from the TV's own menus
-        if (!app.virtual && !PROTECTED.test(app.id) && !APL.platform) {
+        // Deleted through Vetro; on another TV system, through its own way when it has one (LG, rooted: the apps LG lets you delete)
+        var P = APL.platform;
+        if (!app.virtual && !PROTECTED.test(app.id) && (!P || (P.canDelete && P.canDelete(app)))) {
             items.push({ label: APL.t("Delete App"), icon: "trash", destructive: true, run: function () { confirmDelete(app); } });
         }
         APL.contextMenu.open(el.querySelector(".tile__card") || el, items);
@@ -1412,6 +1413,17 @@
     function deleteApp(app) {
         if (APL.sys.PREVIEW) { dropApp(app.id); toast(APL.t("“{name}” was deleted (preview)", { name: app.name })); return; }
         toast(APL.t("Deleting “{name}”…", { name: app.name }));
+        // Another TV system (LG): its own deletion, which answers once the app is gone
+        if (APL.platform && APL.platform.deleteApp) {
+            APL.platform.deleteApp(app).then(function () {
+                dropApp(app.id);
+                toast(APL.t("“{name}” was deleted", { name: app.name }));
+            }, function (e) {
+                toast(/system/.test(e && e.message || "") ? APL.t("“{name}” is part of the TV's system and can't be deleted. You can hide it.", { name: app.name })
+                                                          : APL.t("Couldn't delete “{name}”. You can hide it.", { name: app.name }));
+            });
+            return;
+        }
         APL.sys.vetroPost("/components/action", { appId: app.id, action: "uninstall" }).catch(function () {});
         var tries = 0;
         (function check() {

@@ -215,6 +215,41 @@ service.register("luna", guard(function (message) {
     });
 }));
 
+/* Delete App (hold OK on an app): {id}. Only what LG itself lets you delete (getAppInfo: removable, not a
+   system app), never APL Launcher or the Homebrew Channel. Store apps go through LG's installer, apps
+   installed in Developer Mode or by the Homebrew Channel through its developer side. Answers once the app is
+   really gone (getAppInfo no longer knows it), within 40 s. */
+var NO_REMOVE = /^(com\.knikt\.apllauncher|org\.webosbrew\.)/;
+service.register("remove", guard(function (message) {
+    var id = String((message.payload || {}).id || "");
+    if (!ROOT) { message.respond({ returnValue: false, errorText: "not rooted", notRooted: true }); return; }
+    if (!/^[A-Za-z0-9._-]{1,120}$/.test(id) || NO_REMOVE.test(id)) { message.respond({ returnValue: false, errorText: "not allowed" }); return; }
+    var done = false;
+    function answer(m) { if (done) return; done = true; message.respond(m); }
+    function info(cb) {
+        service.call("luna://com.webos.applicationManager/getAppInfo", { id: id }, function (m) {
+            var p = m && m.payload || {};
+            cb(p.returnValue !== false && p.appInfo ? p.appInfo : null);
+        });
+    }
+    info(function (a) {
+        if (!a) { answer({ returnValue: false, errorText: "not installed" }); return; }
+        if (a.removable !== true || a.systemApp) { answer({ returnValue: false, errorText: "system app", system: true }); return; }
+        var dev = /^\/media\/developer\//.test(String(a.folderPath || ""));
+        service.call(dev ? "luna://com.webos.appInstallService/dev/remove" : "luna://com.webos.appInstallService/remove",
+                     { id: id }, function () {});
+        var tries = 0;
+        (function check() {
+            setTimeout(function () {
+                info(function (still) {
+                    if (!still) { answer({ returnValue: true, removed: true }); return; }
+                    if (++tries < 20) check(); else answer({ returnValue: false, errorText: "still installed" });
+                });
+            }, 2000);
+        })();
+    });
+}));
+
 /* Home opens APL Launcher, or LG's own Home (webos/root/bin/apl-home.sh and apl-home-undo.sh). {} reads the
    state; {apl: true|false} switches now and for the next starts (OFF-home). The app manager restarts: the
    screen goes black a few seconds, and the launcher's page with it. */
