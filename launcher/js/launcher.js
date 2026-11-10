@@ -242,7 +242,9 @@
             global.setTimeout(paintBlur, 400);            // a decode that never settles
         };
         img.onerror = function () { if (token === blurToken) dom.bgBlur.style.background = backdropFor(app); };
-        img.src = src;
+        /* The canvas is small (blurLayer): TMDB's 300 px copy of the picture. Its 4K original was decoded
+           whole by the page itself when the canvas was drawn, 0.4 s at a time on an LG G5 */
+        img.src = APL.artSize ? APL.artSize(src, "w300") : src;
     }
 
     /* The blurred background is only prepared when entering the grid: computing it on

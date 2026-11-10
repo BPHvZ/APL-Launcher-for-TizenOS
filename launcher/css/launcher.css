@@ -1283,6 +1283,18 @@ html, body {
    - A closed panel is not painted at all (visibility), once its fade is over.
    - What fades out and back keeps its layers while it is out: with will-change its opacity is a change the
      compositor makes alone; without it, each fade rebuilt and repainted everything under it. */
+/* Settings: the focused row's white plate and its shadow are one layer sliding from row to row (settings.js
+   placePlate), as on tvOS; the row itself only changes the colour of its text, at once. Its background and
+   shadow fading on focus repainted its 1736 x 360 layer on every frame of the change (80 ms of GPU a move). */
+.is-webos .srow__plate { position: absolute; left: 0; top: 0; width: 100%; height: 72px; border-radius: 36px; background: #fff;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28); opacity: 0; pointer-events: none; will-change: transform, opacity;
+    transition: transform 250ms var(--ease), opacity 200ms ease; }
+.is-webos .srow__plate.is-on { opacity: 1; }
+.is-webos .srow { position: relative; transition: none; }
+.is-webos .srow.is-focused, .is-webos .theme-light .srow.is-focused { background: transparent; box-shadow: none; transform: none; }
+/* Sources: its dim a layer of its own, a plain colour the screen draws without painting it. Inside the sheet's
+   layer it made opening Sources raster a 4K surface (113 ms of GPU on a G5). */
+.is-webos .sources__dim { will-change: opacity; }
 .is-webos .settings:not(.is-open) { visibility: hidden; transition: opacity 350ms ease, visibility 0s linear 350ms; }
 .is-webos .sources:not(.is-open), .is-webos .search:not(.is-open) { visibility: hidden; transition: opacity 220ms ease, visibility 0s linear 220ms; }
 .is-webos .profiles:not(.is-open) { visibility: hidden; transition: opacity 200ms ease, visibility 0s linear 200ms; }
