@@ -33,8 +33,20 @@
     if (FR) {
         var add = {
             "This needs root on Android.": "Il faut le root sur Android.",
-            "Turn on APL Launcher in Android's Accessibility settings first (Settings › Android TV › Remote Buttons).":
-                "Activez d'abord APL Launcher dans l'accessibilité d'Android (Réglages › Android TV › Touches de la télécommande).",
+            "Turn on APL Launcher Home Button first (Settings › Android TV).": "Activez d'abord APL Launcher Home Button (Réglages › Android TV).",
+            "Install APL Launcher Home Button first (Settings › Android TV).": "Installez d'abord APL Launcher Home Button (Réglages › Android TV).",
+            "Get APL Launcher Home Button": "Obtenir APL Launcher Home Button",
+            "Not installed": "Pas installé",
+            "Home, holding Home and ⏯ over every app need a small second app, APL Launcher Home Button. It is separate because Google Play Protect blocks any app installed outside the Play Store that uses Accessibility.":
+                "Accueil, l'appui long sur Accueil et ⏯ par-dessus les apps demandent une petite seconde app, APL Launcher Home Button. Elle est à part car Google Play Protect bloque toute app installée hors du Play Store qui utilise l'accessibilité.",
+            "To install it: in the Play Store, open your profile › Settings › Play Protect and turn off “Scan apps with Play Protect”. Open the address below in Downloader and install it, then turn Play Protect back on. From a PC: adb install. Then turn it on in Accessibility.":
+                "Pour l'installer : dans le Play Store, ouvrez votre profil › Paramètres › Play Protect et désactivez « Analyser les applications avec Play Protect ». Ouvrez l'adresse ci-dessous dans Downloader et installez-la, puis réactivez Play Protect. Depuis un PC : adb install. Ensuite, activez-la dans Accessibilité.",
+            "Open Downloader": "Ouvrir Downloader",
+            "Downloader code": "Code Downloader",
+            "The Control Center over the app in front needs “draw over other apps”. Without it, holding Home opens the launcher with its Control Center. From a PC: adb shell appops set com.knikt.apllauncher SYSTEM_ALERT_WINDOW allow":
+                "Le Centre de contrôle par-dessus l'app au premier plan demande « superposition sur d'autres applis ». Sans elle, un appui long sur Accueil ouvre le launcher avec son Centre de contrôle. Depuis un PC : adb shell appops set com.knikt.apllauncher SYSTEM_ALERT_WINDOW allow",
+            "Allow Over Other Apps": "Autoriser la superposition",
+            "Not allowed": "Non autorisé",
             "Sources are not available on Android yet.": "Les sources ne sont pas encore disponibles sur Android.",
             "Not used on Android": "Pas utilisé sur Android",
             "Android TV": "Android TV",
@@ -48,8 +60,8 @@
             "This device has no setting for it: see docs/android.md (adb).": "Cet appareil n'a pas ce réglage : voir docs/android.md (adb).",
             "Remote Buttons": "Touches de la télécommande",
             "Turn On the Remote Buttons": "Activer les touches de la télécommande",
-            "In Accessibility, choose APL Launcher and turn it on. Then: hold Home for the Control Center over any app, ⏯ opens it too, the Sleep Timer and Sleep work, and on Google TV Home opens APL Launcher.":
-                "Dans Accessibilité, choisissez APL Launcher et activez-le. Ensuite : maintenez Accueil pour le Centre de contrôle sur n'importe quelle app, ⏯ l'ouvre aussi, la minuterie de mise en veille et la veille marchent, et sur Google TV le bouton Accueil ouvre APL Launcher.",
+            "In Accessibility, choose APL Launcher Home Button and turn it on. Then Home opens APL Launcher, holding Home or ⏯ opens the Control Center over any app, and Sleep and the Sleep Timer work.":
+                "Dans Accessibilité, choisissez APL Launcher Home Button et activez-le. Accueil ouvre alors APL Launcher, l'appui long sur Accueil ou ⏯ ouvre le Centre de contrôle par-dessus n'importe quelle app, et la veille et la minuterie marchent.",
             "Home Button": "Bouton Accueil",
             "Android TV and Google TV keep their own launcher on the Home button, even once APL Launcher is chosen. APL Launcher: the remote buttons (Accessibility) take it and open APL Launcher.":
                 "Android TV et Google TV gardent leur propre launcher sur le bouton Accueil, même quand APL Launcher est choisi. APL Launcher : les touches de la télécommande (Accessibilité) le prennent et ouvrent APL Launcher.",
@@ -58,9 +70,6 @@
             "Over Apps": "Sur les apps",
             "Accessibility": "Accessibilité",
             "Allowed": "Autorisé",
-            "Not set up": "Pas configuré",
-            "How the Control Center opens over an app: through the remote buttons (Accessibility), or the “draw over other apps” permission given with adb.":
-                "Comment le Centre de contrôle s'ouvre par-dessus une app : par les touches de la télécommande (Accessibilité), ou l'autorisation « superposition » donnée avec adb.",
             "Root": "Root",
             "Not needed": "Pas nécessaire",
             "Found, not used": "Présent, pas utilisé",
@@ -100,12 +109,12 @@
             "Continue": "Continuer",
             "Later": "Plus tard",
             "One More Step: the Remote Buttons": "Encore une étape : les touches de la télécommande",
-            "This device keeps its own home screen on the Home button, even once APL Launcher is chosen. In Accessibility, choose APL Launcher and turn it on: Home then opens APL Launcher, and holding Home opens the Control Center over any app. Android then shows its usual warning about accessibility services: APL Launcher only sees the remote's buttons and which app is in front, and sends nothing anywhere.":
-                "Cet appareil garde son propre écran d'accueil sur le bouton Accueil, même quand APL Launcher est choisi. Dans Accessibilité, choisissez APL Launcher et activez-le : Accueil ouvre alors APL Launcher, et un appui long sur Accueil ouvre le Centre de contrôle par-dessus n'importe quelle app. Android affiche alors son avertissement habituel sur l'accessibilité : APL Launcher ne voit que les touches de la télécommande et l'app au premier plan, et n'envoie rien nulle part.",
+            "This device keeps its own home screen on the Home button, even once APL Launcher is chosen. In Accessibility, choose APL Launcher Home Button and turn it on: Home then opens APL Launcher, and holding Home opens the Control Center over any app. Android then shows its usual warning about accessibility services: the module only sees the remote's buttons and which app is in front, and sends nothing anywhere.":
+                "Cet appareil garde son propre écran d'accueil sur le bouton Accueil, même quand APL Launcher est choisi. Dans Accessibilité, choisissez APL Launcher Home Button et activez-le : Accueil ouvre alors APL Launcher, et un appui long sur Accueil ouvre le Centre de contrôle par-dessus n'importe quelle app. Android affiche alors son avertissement habituel sur l'accessibilité : le module ne voit que les touches de la télécommande et l'app au premier plan, et n'envoie rien nulle part.",
             "Open Accessibility": "Ouvrir Accessibilité",
             "All set: Home now opens APL Launcher.": "C'est prêt : le bouton Accueil ouvre maintenant APL Launcher.",
-            "Not yet: in Accessibility, choose APL Launcher and turn it on. Settings › Android TV has it too.":
-                "Pas encore : dans Accessibilité, choisissez APL Launcher et activez-le. C'est aussi dans Réglages › Android TV.",
+            "Not yet: in Accessibility, choose APL Launcher Home Button and turn it on. Settings › Android TV has it too.":
+                "Pas encore : dans Accessibilité, choisissez APL Launcher Home Button et activez-le. C'est aussi dans Réglages › Android TV.",
             "Other": "Autre",
             "Type the key, then OK. The Google TV app on your phone can type it too. Back to cancel.":
                 "Tapez la clé, puis OK. L'app Google TV de votre téléphone peut aussi la taper. Retour pour annuler.",
@@ -156,7 +165,27 @@
     }
     applyKeys();
 
-    function needsService() { return T("Turn on APL Launcher in Android's Accessibility settings first (Settings › Android TV › Remote Buttons)."); }
+    /* The remote's buttons over apps, sleep and the Sleep Timer: APL Launcher Home Button (android/homebutton) */
+    function needsService() {
+        return fresh().module ? T("Turn on APL Launcher Home Button first (Settings › Android TV).") : T("Install APL Launcher Home Button first (Settings › Android TV).");
+    }
+    var MODULE_URL = "https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-home-button.apk";
+    var MODULE_CODE = "";            // a Downloader short code (go.aftvnews.com) for MODULE_URL, once there is one
+    var DOWNLOADER = "com.esaba.downloader";
+    /* How to get APL Launcher Home Button: why it is separate, Play Protect, where it is */
+    function moduleHelp(then) {
+        var box = document.createElement("div");
+        box.className = "aplalert__qr";
+        var url = document.createElement("div");
+        url.className = "aplalert__qrurl";
+        url.textContent = MODULE_CODE ? T("Downloader code") + " " + MODULE_CODE : MODULE_URL.replace(/^https:\/\//, "");
+        box.appendChild(url);
+        var buttons = [];
+        if (B.installed(DOWNLOADER)) buttons.push({ label: T("Open Downloader"), run: function () { setupWait = "module"; B.launch(DOWNLOADER); } });
+        buttons.push({ label: buttons.length ? T("Later") : T("OK"), run: then });
+        APL.alert({ title: "APL Launcher Home Button", message: T("Home, holding Home and ⏯ over every app need a small second app, APL Launcher Home Button. It is separate because Google Play Protect blocks any app installed outside the Play Store that uses Accessibility.") + " " + T("To install it: in the Play Store, open your profile › Settings › Play Protect and turn off “Scan apps with Play Protect”. Open the address below in Downloader and install it, then turn Play Protect back on. From a PC: adb install. Then turn it on in Accessibility."),
+                    node: box, buttons: buttons });
+    }
     function fail(msg) { return Promise.reject(new Error(msg)); }
     function needsRoot() { return fail(T("This needs root on Android.")); }
     function toast(m, quiet) { if (APL.toast) APL.toast(m, quiet); }
@@ -458,19 +487,18 @@
                 else if (r === "role" || r === "settings") toast(T("Android asks which app to use: choose APL Launcher. If nothing opens, docs/android.md has the adb command."), true);
                 else toast(T("This device has no setting for it: see docs/android.md (adb)."));
             }, T("Android asks which app to use: choose APL Launcher. If nothing opens, docs/android.md has the adb command."), "grid"),
-            infoRow(T("Remote Buttons"), function () { return onOff(fresh().accessibility); },
-                T("In Accessibility, choose APL Launcher and turn it on. Then: hold Home for the Control Center over any app, ⏯ opens it too, the Sleep Timer and Sleep work, and on Google TV Home opens APL Launcher.")),
-            opener(T("Turn On the Remote Buttons"), "accessibility",
-                T("In Accessibility, choose APL Launcher and turn it on. Then: hold Home for the Control Center over any app, ⏯ opens it too, the Sleep Timer and Sleep work, and on Google TV Home opens APL Launcher."), "remote")
+            infoRow("APL Launcher Home Button", function () { var i = fresh(); return !i.module ? T("Not installed") : onOff(i.accessibility); },
+                T("Home, holding Home and ⏯ over every app need a small second app, APL Launcher Home Button. It is separate because Google Play Protect blocks any app installed outside the Play Store that uses Accessibility.")),
+            info.module ? opener(T("Turn On the Remote Buttons"), "accessibility", T("In Accessibility, choose APL Launcher Home Button and turn it on. Then Home opens APL Launcher, holding Home or ⏯ opens the Control Center over any app, and Sleep and the Sleep Timer work."), "remote")
+                        : action(T("Get APL Launcher Home Button"), function () { moduleHelp(); }, T("To install it: in the Play Store, open your profile › Settings › Play Protect and turn off “Scan apps with Play Protect”. Open the address below in Downloader and install it, then turn Play Protect back on. From a PC: adb install. Then turn it on in Accessibility."), "remote")
         ];
         if (!info.defaultHome) {
             rows.push({ type: "choice", label: T("Home Button"), key: "catchHome", options: [[true, "APL Launcher"], [false, homeName]],
                         desc: T("Android TV and Google TV keep their own launcher on the Home button, even once APL Launcher is chosen. APL Launcher: the remote buttons (Accessibility) take it and open APL Launcher.") });
         }
-        rows.push(infoRow(T("Over Apps"), function () {
-            var i = fresh();
-            return i.accessibility ? T("Accessibility") : i.overlayAllowed ? T("Allowed") : T("Not set up");
-        }, T("How the Control Center opens over an app: through the remote buttons (Accessibility), or the “draw over other apps” permission given with adb.")));
+        var over = T("The Control Center over the app in front needs “draw over other apps”. Without it, holding Home opens the launcher with its Control Center. From a PC: adb shell appops set com.knikt.apllauncher SYSTEM_ALERT_WINDOW allow");
+        rows.push(infoRow(T("Over Apps"), function () { return fresh().overlayAllowed ? T("Allowed") : T("Not allowed"); }, over));
+        if (!info.overlayAllowed) rows.push(opener(T("Allow Over Other Apps"), "overlay", over, "sliders"));
         rows.push(infoRow(T("Root"), function () { return fresh().root ? T("Found, not used") : T("Not needed"); },
             T("APL Launcher works without root. With root, a later version could close every app and reach deeper settings.")));
         rows.push(infoRow("docs/android.md", function () { return ""; }, T("Setup guide: github.com/Knikt/APL-Launcher, docs/android.md.")));
@@ -570,8 +598,8 @@
         var remote = find(top, "Remote and Devices");
         if (remote) {
             remote.children = without(remote.children, ["Alexa (Echo Dot)", "Bluetooth"]);
-            remote.children.push(opener(T("Turn On the Remote Buttons"), "accessibility",
-                T("In Accessibility, choose APL Launcher and turn it on. Then: hold Home for the Control Center over any app, ⏯ opens it too, the Sleep Timer and Sleep work, and on Google TV Home opens APL Launcher."), "remote"));
+            remote.children.push(info.module ? opener(T("Turn On the Remote Buttons"), "accessibility", T("In Accessibility, choose APL Launcher Home Button and turn it on. Then Home opens APL Launcher, holding Home or ⏯ opens the Control Center over any app, and Sleep and the Sleep Timer work."), "remote")
+                                             : action(T("Get APL Launcher Home Button"), function () { moduleHelp(); }, T("Home, holding Home and ⏯ over every app need a small second app, APL Launcher Home Button. It is separate because Google Play Protect blocks any app installed outside the Play Store that uses Accessibility."), "remote"));
             remote.children.push(opener(T("Remotes and Accessories"), "bluetooth", T("Bluetooth headphones, speakers, game controllers and remotes, in Android."), "bluetooth"));
         }
 
@@ -729,8 +757,9 @@
     function askRemoteButtons(alone) {
         var i = fresh();
         if (homeWorks(i)) { setupDone(); return; }
+        if (!i.module) { moduleHelp(); return; }          // the module first: Play Protect keeps it out of the launcher itself
         APL.alert({ title: alone ? T("Turn On the Remote Buttons") : T("One More Step: the Remote Buttons"),
-            message: T("This device keeps its own home screen on the Home button, even once APL Launcher is chosen. In Accessibility, choose APL Launcher and turn it on: Home then opens APL Launcher, and holding Home opens the Control Center over any app. Android then shows its usual warning about accessibility services: APL Launcher only sees the remote's buttons and which app is in front, and sends nothing anywhere."),
+            message: T("This device keeps its own home screen on the Home button, even once APL Launcher is chosen. In Accessibility, choose APL Launcher Home Button and turn it on: Home then opens APL Launcher, and holding Home opens the Control Center over any app. Android then shows its usual warning about accessibility services: the module only sees the remote's buttons and which app is in front, and sends nothing anywhere."),
             buttons: [{ label: T("Open Accessibility"), run: function () { setupWait = "accessibility"; B.openSettings("accessibility"); } },
                       { label: T("Later") }] });
     }
@@ -748,18 +777,27 @@
         var w = setupWait;
         setupWait = "";
         if (w === "home") setTimeout(askRemoteButtons, 400);
+        else if (w === "module") { if (fresh().module) setTimeout(function () { askRemoteButtons(true); }, 400); }
         else if (w === "accessibility") {
             if (homeWorks(fresh())) setupDone();
-            else toast(T("Not yet: in Accessibility, choose APL Launcher and turn it on. Settings › Android TV has it too."));
+            else toast(T("Not yet: in Accessibility, choose APL Launcher Home Button and turn it on. Settings › Android TV has it too."));
         }
     }
     listen("homeRole", function () { if (setupWait === "home") backFromAndroid(); });
+    // The module installed from Downloader while the launcher waits behind it: the next step once back here
+    listen("packages", function () { if (!setupWait && !homeWorks(fresh()) && info.module && !info.accessibility) setupWait = "module"; });
     document.addEventListener("visibilitychange", function () {
         // Android's Home settings and Accessibility say nothing when they close: the launcher showing again is the answer
         if (!document.hidden && setupWait) setTimeout(function () { if (setupWait && !document.hidden) backFromAndroid(); }, 600);
     });
     function firstStarts() {
         var i = fresh(), n = sys.pref("androidSetupAsked") || 0;
+        // Updated from 1.1.3 or before, where the launcher had the Home button itself: once, why it's gone and where it is
+        if (i.oldService && !i.module && !sys.pref("moduleNoticeShown") && !document.hidden) {
+            sys.setPref("moduleNoticeShown", true);
+            moduleHelp();
+            return;
+        }
         if (homeWorks(i) || n >= 3 || document.hidden) return;
         if ((APL.settings && APL.settings.isOpen()) || (APL.alert && APL.alert.isOpen && APL.alert.isOpen())) return;
         sys.setPref("androidSetupAsked", n + 1);
