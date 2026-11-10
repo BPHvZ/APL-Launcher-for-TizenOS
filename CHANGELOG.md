@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3
+- **LG: Close Unused Apps**, as on Samsung (rooted TV). An app left 10 minutes in the background closes on its own, and one the TV opened by itself and you never used (LG Channels) after 1 minute: the TV keeps its memory and the launcher stays smooth. Never the app in front, live TV, the inputs, AirPlay, or an app playing sound or video. *Settings › Apps › Close Unused Apps* turns it off. On an LG OLED G5, the swap had grown to 458 MB without it.
+- **LG: the apps you don't use never open.** LG preloads LG Channels in the background at every start: its start page is now covered in RAM by a blank one that closes at once (`apl-noload.sh`, the list in `noload.list`). Nothing is written in the system, and one command gives it back. Run the root install once more (APL Launcher Setup, or the one command in the README) to get it.
+- **LG: right after an update, the launcher sees root again.** It looked for root once, before `apl-keep-root.sh` had given it back, and hid the root features until it was opened again: it now looks again for a few minutes and reloads once, with your keys and fonts.
+
 ## 1.1.2
 - **LG: Delete App.** Hold OK on an app, then *Delete App*, as on Samsung: on a rooted TV, for every app LG itself lets you delete (TF1+, M6+, france.tv, Rakuten TV…). LG's system apps (LG Channels, Alexa…) don't offer it. Since Home opens APL Launcher, LG's own menu to delete apps was out of reach. Tried on an LG OLED G5: TF1+ and M6+ deleted in 3 s each.
 - **LG: root kept after every update.** Updating the launcher (from the Homebrew Channel, APL Launcher Setup or ares-install) took root away from its service until the next restart: no picture settings, no closing of apps, and Guide gave a black screen. A watcher started at every boot (`apl-keep-root.sh`) gives root back within seconds, and puts back the files a public package can't have: the SF Pro fonts, your API keys, your avatars. Run the root install once more (APL Launcher Setup, or the one command in the README) to get it.
