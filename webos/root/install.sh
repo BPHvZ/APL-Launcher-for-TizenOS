@@ -77,6 +77,8 @@ fetch "$APL/home/appinfo.json"     home/appinfo.json
 mkdir -p "$APL/guide"
 fetch "$APL/guide/index.html"      guide/index.html
 fetch "$APL/guide/appinfo.json"    guide/appinfo.json
+mkdir -p "$APL/cchost"
+fetch "$APL/cchost/appinfo.json"   cchost/appinfo.json
 
 echo
 echo "Downloading boot hooks into $HOOK/"

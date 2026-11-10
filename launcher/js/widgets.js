@@ -693,7 +693,7 @@
 
     /* Back from an app: what was just watched counts right away. */
     document.addEventListener("visibilitychange", function () {
-        if (document.hidden || !READERS[shownFor]) return;
+        if (document.hidden || APL.ccOverlay || !READERS[shownFor]) return;
         delete cache[shownFor];
         trendN++;
         painted = "";

@@ -1325,3 +1325,9 @@ html, body {
    edges. With the Settings panel (32 MB) the page then stays under the TV's 125 MB: past it, a band of the
    panel was left unpainted, a black bar (a G5). */
 .is-webos .perf .settings__listwrap { -webkit-mask-image: none; mask-image: none; }
+
+/* The Control Center over the apps (LG's Guide button on a rooted TV, js/webos.js): this page is a window LG
+   draws over the app in front, see-through, with nothing but the panel. The app's own picture stays under it. */
+html.is-cc-overlay, html.is-cc-overlay body { background: transparent; }
+.is-cc-overlay .bg, .is-cc-overlay .bgblur, .is-cc-overlay .scrim, .is-cc-overlay .status, .is-cc-overlay .shelfinfo,
+.is-cc-overlay .hint, .is-cc-overlay .home, .is-cc-overlay .boot { display: none; }

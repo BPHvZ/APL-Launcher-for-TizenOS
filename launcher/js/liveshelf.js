@@ -43,7 +43,7 @@
     })();
     var KEYS = global.APL_KEYS;
     var TTL = 6 * 3600 * 1000;
-    var CACHE_VERSION = 5;              // 3: movies and series carry their title and their rating; 4: Smart Hub items their deep link; 5: "tv" / "movie", translated when shown
+    var CACHE_VERSION = 6;              // 3: movies and series carry their title and their rating; 4: Smart Hub items their deep link; 5: "tv" / "movie", translated when shown; 6: all audiences only on LG
     var MIN_VOTES = 20;                 // below that, a rating doesn't mean anything yet
 
     /* The screen's country, for trending videos, charts, prices and what each service streams there.
@@ -121,7 +121,7 @@
         } catch (e) {}
     }
     cacheFor(REGION);
-    setTimeout(function () { readRegion(6); }, 20000);
+    if (!APL.ccOverlay) setTimeout(function () { readRegion(6); }, 20000);
 
     /* TMDB (JustWatch) "provider" ids of the services (the same in every country). */
     var TMDB_PROVIDERS = {
@@ -224,6 +224,51 @@
     }
     function kind(k) { return function (r) { r._kind = r._kind || k; return r; }; }
 
+    /* ---------- all audiences only (LG: APL.platform.allAges, js/webos.js) ----------
+       What the Top Shelf recommends (popular on a service, trending, anime) is then only for all ages: every
+       rating TMDB knows for it, in the screen's country and in the big ones (US, UK, Germany, France), is
+       Tous publics, U, G, PG, FSK 0 or 6. Nothing rated -10, -12, PG-13, 12A, FSK 12 and above, nothing with no
+       rating. The same rule as APL TV's screen saver (its js/meta.js, allAges). */
+    var ALL_AGES = !!(APL.platform && APL.platform.allAges);
+    var AGES = { G: 0, U: 0, TP: 0, AL: 0, KT: 0, T: 0, L: 0, APTA: 0, A: 0, "TV-Y": 0, "TV-G": 0, C: 0,
+                 PG: 8, "TV-Y7": 7, C8: 8, "TV-PG": 10, "PG-13": 13, "TV-14": 14, "14A": 14, "12A": 12, R: 17, "TV-MA": 17,
+                 "NC-17": 18, "18A": 18, R18: 18, X: 18, VM14: 14, VM18: 18 };
+    var UNRATED = /^(NR|N\/A|NA|UNRATED|NOT RATED|-|EXEMPT|E)$/i;
+    function minAge(cc, v) {
+        var up = String(v || "").toUpperCase().trim(), n = parseInt(up.replace(/^M\//, "").replace(/\D/g, ""), 10);
+        if (!up || UNRATED.test(up)) return -1;
+        if (AGES[up] !== undefined) return cc === "CA" && up === "R" ? 18 : AGES[up];
+        return isNaN(n) ? -1 : n;
+    }
+    var RELEASE_ORDER = [3, 2, 4, 5, 1, 6];          // the cinema release's rating first, then the others
+    function ageOk(r) {
+        if (r.adult) return Promise.resolve(false);
+        var path = r._kind === "tv" ? "/tv/" + r.id + "/content_ratings" : "/movie/" + r.id + "/release_dates";
+        return getJson(TMDB + path + "?api_key=" + KEYS.tmdb).then(function (j) {
+            var by = {};
+            (j.results || []).forEach(function (x) {
+                var v = x.rating || "", rank = 99;
+                (x.release_dates || []).forEach(function (d) {
+                    var k = RELEASE_ORDER.indexOf(d.type);
+                    if (k < 0) k = 9;
+                    if (d.certification && k < rank) { rank = k; v = d.certification; }
+                });
+                by[x.iso_3166_1] = v;
+            });
+            var worst = -1;
+            ["US", "GB", "DE", "FR", REGION].forEach(function (cc) { if (by[cc]) worst = Math.max(worst, minAge(cc, by[cc])); });
+            return worst >= 0 && worst < 10;
+        }).catch(function () { return false; });
+    }
+    /* The most popular ones, or on LG the most popular for all audiences (more are looked at: few are) */
+    function pick(results, n) {
+        if (!ALL_AGES) return Promise.resolve(top(results, n));
+        var many = top(results, 30);
+        return Promise.all(many.map(ageOk)).then(function (ok) {
+            return many.filter(function (r, i) { return ok[i]; }).slice(0, n || 8);
+        });
+    }
+
     /* Popular movies and series on a service (Netflix, Prime Video…) in the screen's country. */
     function tmdb(providerId) {
         var common = "api_key=" + KEYS.tmdb + "&language=" + APL.locale + "&watch_region=" + REGION +
@@ -232,15 +277,15 @@
             getJson(TMDB + "/discover/tv?" + common).catch(function () { return { results: [] }; }),
             getJson(TMDB + "/discover/movie?" + common).catch(function () { return { results: [] }; })
         ]).then(function (res) {
-            return decorate(top((res[0].results || []).map(kind("tv")).concat((res[1].results || []).map(kind("movie")))));
+            return pick((res[0].results || []).map(kind("tv")).concat((res[1].results || []).map(kind("movie")))).then(decorate);
         });
     }
 
     /* Trending titles of the week, all services (movie and series websites). */
     function trending() {
         return getJson(TMDB + "/trending/all/week?api_key=" + KEYS.tmdb + "&language=" + APL.locale).then(function (j) {
-            return decorate(top((j.results || []).filter(function (r) { return r.media_type === "movie" || r.media_type === "tv"; })
-                .map(function (r) { r._kind = r.media_type; return r; })));
+            return pick((j.results || []).filter(function (r) { return r.media_type === "movie" || r.media_type === "tv"; })
+                .map(function (r) { r._kind = r.media_type; return r; })).then(decorate);
         });
     }
 
@@ -251,7 +296,7 @@
             getJson(TMDB + "/discover/tv?" + q).catch(function () { return { results: [] }; }),
             getJson(TMDB + "/discover/movie?" + q).catch(function () { return { results: [] }; })
         ]).then(function (res) {
-            return decorate(top((res[0].results || []).map(kind("tv")).concat((res[1].results || []).map(kind("movie")))));
+            return pick((res[0].results || []).map(kind("tv")).concat((res[1].results || []).map(kind("movie")))).then(decorate);
         });
     }
 

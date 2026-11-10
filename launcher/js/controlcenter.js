@@ -21,6 +21,7 @@
 
     var APL = global.APL, sys = APL.sys, K = APL.KEY;
     var P = APL.platform;             // another TV system (js/webos-settings.js on LG): its own sound outputs and AirPlay
+    var CC = !!(P && P.ccOverlay);    // drawn over the app in front (LG's Guide button): only this panel on the page
     /* The slider: the screen's brightness, or what the TV system puts there instead (LG keeps its picture
        settings from apps: the volume there) */
     var SLIDER = (P && P.ccSlider) || { id: "backlight", icon: "sun", title: APL.t("Brightness") };
@@ -46,7 +47,17 @@
             }, function (e) { APL.toast(e.message); });
         };
     }
-    function openSettings(section) { return function () { close(); APL.settings.open(section); }; }
+    function openSettings(section) {
+        return function () {
+            close();
+            if (CC) { P.toLauncher(section ? "settings:" + section : "settings"); return; }     // over the apps (webos.js)
+            APL.settings.open(section);
+        };
+    }
+    /* A page of the launcher: over the apps (LG's Guide button, webos.js), the launcher is put in front for it */
+    function inLauncher(action, here) {
+        return function () { close(); if (CC) P.toLauncher(action); else here(); };
+    }
 
     function remaining() {
         var at = sys.pref("sleepAt");
@@ -305,7 +316,8 @@
               on: function () { return sys.network().connected; }, select: openSettings(APL.t("Connection")) },
             { cls: "pill", icon: "moon", title: APL.t("Do Not Disturb"), tint: "#5e5ce6",
               sub: function () { return sys.pref("dnd") ? APL.t("On") : APL.t("Off"); },
-              on: function () { return sys.pref("dnd"); }, select: function () { sys.setPref("dnd", !sys.pref("dnd")); } },
+              on: function () { return sys.pref("dnd"); },
+              select: function () { sys.setPref("dnd", !sys.pref("dnd")); if (P && P.ccChanged) P.ccChanged(); } },
             { cls: "pill", icon: "airplayAudio", title: "Audio", sub: outputName, select: function () { show("audio"); } },
             { cls: "pill", icon: "timer", title: APL.t("Sleep Timer"), tint: "#ff9f0a", sub: remaining,
               on: function () { return !!sys.pref("sleepAt"); },
@@ -313,6 +325,7 @@
                   var i = TIMERS.indexOf(sys.pref("sleepTimer"));
                   var next = TIMERS[(i + 1) % TIMERS.length];
                   sys.armSleepTimer(next);
+                  if (P && P.ccChanged) P.ccChanged();
                   APL.toast(next ? APL.t("Going to sleep in {n} min", { n: next }) : APL.t("Sleep Timer off"), true);
               } },
             { cls: "round", icon: "gamepad", title: APL.t("Game Mode"), tint: "#30d158",
@@ -323,11 +336,11 @@
             { cls: "round", icon: "source", title: "Sources", select: function () { close(); APL.openSources(); } },
             { cls: "slider", type: "backlight", icon: SLIDER.icon, title: SLIDER.title },
             { cls: "pill", icon: "photo", title: APL.t("Screensaver"), sub: function () { return APL.t("Start"); },
-              select: function () { close(); if (APL.screensaver) APL.screensaver.start(); } },
+              select: inLauncher("screensaver", function () { if (APL.screensaver) APL.screensaver.start(); }) },
             { cls: "pill", icon: "gear", title: APL.t("Settings"), sub: function () { return APL.t("All settings"); },
               select: openSettings() },
             { cls: "round", icon: "search", title: APL.t("Search"), start: true,
-              select: function () { close(); if (APL.search) APL.search.open(); } }
+              select: inLauncher("search", function () { if (APL.search) APL.search.open(); }) }
         ];
     }
 
@@ -516,7 +529,8 @@
         });
         if (view === "main") {
             // The avatar at the top right: the household's profiles
-            avatarEl._item = { cls: "avatar", title: APL.t("Profiles"), select: function () { close(); if (APL.profilesUI) APL.profilesUI.open(); } };
+            avatarEl._item = { cls: "avatar", title: APL.t("Profiles"),
+                               select: inLauncher("profiles", function () { if (APL.profilesUI) APL.profilesUI.open(); }) };
             focusables.unshift(avatarEl);
         }
         nav.setTiles(focusables);
@@ -662,6 +676,7 @@
         document.body.classList.remove("has-cc");
         APL.popNav(nav);
         isOpen = false;
+        if (CC && P.ccQuit) P.ccQuit();          // over the apps: the window goes with it
     }
 
     setInterval(function () { if (isOpen) refresh(); }, 15000);
