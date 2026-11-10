@@ -131,6 +131,7 @@ echo "  sh $HOOK/10-apl-block-updates"
 echo "  sh $HOOK/11-apl-block-privacy"
 echo "  sh $APL/apl-debloat-stop.sh"
 echo "  sh $APL/apl-services-stop.sh"
+echo "  sh $HOOK/14-apl-noload           (LG Channels never opens)"
 echo "  sh $HOOK/15-apl-preload-off      (LG no longer opens apps in the background by itself)"
 echo "  sh $APL/apl-home.sh             (Home opens APL Launcher; the screen goes black a few seconds)"
 echo
