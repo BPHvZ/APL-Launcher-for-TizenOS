@@ -9,7 +9,7 @@
   "rootRequired": false,
   "ipkUrl": "https://github.com/Knikt/APL-Launcher/releases/download/v1.1.2/apl-launcher-v1.1.2-lg-webos.ipk",
   "ipkHash": {
-    "sha256": "1d675f6adaea0a6803750e6aaa29f5b2de9f6210433e72684bf4b7b7270bf751"
+    "sha256": "2144f658cdfef734932172f76d507e49d866cc822beb19a0822ab73355958f69"
   },
-  "ipkSize": 5453692
+  "ipkSize": 5454498
 }
