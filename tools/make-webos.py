@@ -47,7 +47,8 @@ os.makedirs(app_dir); os.makedirs(svc_dir)
 SKIP_TOP = {"config.xml", "bridge", "version.json", ".manifest.tmp", "author-signature.xml", "signature1.xml"}
 PRIVATE = ("js/keys.local.js", "js/avatars.local.js", "js/keys.example.js")
 def is_personal(rel):
-    return (rel.startswith(("fonts/", "sounds/")) and not rel.endswith((".css", ".md", ".txt"))) or \
+    # SF Pro (Apple's license) and your own avatars; the launcher's sounds are in the repository and go everywhere
+    return (rel.startswith("fonts/") and not rel.endswith((".css", ".md", ".txt"))) or \
            rel.startswith(("images/avatars/custom/", "images/avatars/memoji/"))
 for base, dirs, files in os.walk(L):
     for f in files:
@@ -66,7 +67,8 @@ if "$WEBAPIS" in html:
     sys.exit("index.html: Samsung's script line was not found, update tools/make-webos.py")
 open(os.path.join(app_dir, "index.html"), "w", encoding="utf-8", newline="\n").write(html)
 
-# Keys, avatars, fonts, sounds: yours on your own TV; empty keys and none of the rest in the published package
+# Keys, avatars, fonts: yours on your own TV; in the published package, empty keys and the Memoji of the profiles
+# (downloaded from wimell/tapback-memojis, MIT, as APL Launcher Setup does for Samsung: tools/memoji.py)
 keys_src = os.path.join(personal, "js", "keys.local.js")
 if release or not os.path.exists(keys_src):
     keys_src = os.path.join(L, "js", "keys.example.js")
@@ -82,6 +84,12 @@ if not release:
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(src, dst)
                 copied.append(rel)
+else:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import memoji
+    names = memoji.fetch(os.path.join(app_dir, "images", "avatars", "memoji"))
+    if names:
+        open(os.path.join(app_dir, "js", "avatars.local.js"), "w", encoding="utf-8", newline="\n").write(memoji.avatars_js(names))
 
 # Icons: 80 x 80 and 130 x 130 (LG's sizes), from the 512 x 512 one; the splash: the logo on black
 from PIL import Image

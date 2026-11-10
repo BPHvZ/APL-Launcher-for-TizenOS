@@ -40,6 +40,8 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
+        <!-- APL TV's Top Shelf (its ShelfProvider) -->
+        <provider android:authorities="com.knikt.apltv.shelf" />
     </queries>
 
     <application
@@ -93,5 +95,16 @@
 
         <!-- Sleep Timer -->
         <receiver android:name=".SleepReceiver" android:exported="false" />
+
+        <!-- The API keys sent by APL Launcher Setup over adb (KeysReceiver.kt). WRITE_SECURE_SETTINGS: only the shell
+             (adb) and the system hold it, so no app on the device can send it. -->
+        <receiver
+            android:name=".KeysReceiver"
+            android:exported="true"
+            android:permission="android.permission.WRITE_SECURE_SETTINGS">
+            <intent-filter>
+                <action android:name="com.knikt.apllauncher.SET_KEYS" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

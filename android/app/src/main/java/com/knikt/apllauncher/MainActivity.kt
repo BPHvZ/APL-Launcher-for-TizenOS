@@ -49,7 +49,8 @@ class MainActivity : Activity(), Bridge.Host {
         runOnUiThread {
             val im = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             val w = web ?: return@runOnUiThread
-            if (on) { w.requestFocus(); im.showSoftInput(w, InputMethodManager.SHOW_IMPLICIT) }
+            // requestFocus on a WebView that already has it moved the page's focus away from the text field
+            if (on) { if (!w.hasFocus()) w.requestFocus(); im.showSoftInput(w, InputMethodManager.SHOW_IMPLICIT) }
             else im.hideSoftInputFromWindow(w.windowToken, 0)
         }
     }
@@ -84,6 +85,9 @@ class MainActivity : Activity(), Bridge.Host {
 
     /* The page, once started, takes what it was opened for (the Control Center over an app asked for Settings…). */
     fun takeAction(): String { val a = pendingAction ?: ""; pendingAction = null; return a }
+
+    /* New API keys (KeysReceiver.kt): the page starts again with them */
+    fun reloadPage() { web?.reload() }
 
     /* ---------- Home and the launcher's pages ---------- */
     override fun onNewIntent(intent: Intent) {

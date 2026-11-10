@@ -1,7 +1,9 @@
 """Builds APL Launcher for Android TV and Google TV: an .apk.
 
-    python tools/make-android.py              your own devices: your keys, fonts, sounds and avatars (never publish it)
-    python tools/make-android.py --release    the package for GitHub Releases: no personal file
+    python tools/make-android.py              your own devices: your keys, fonts and avatars (never publish it)
+    python tools/make-android.py --release    the package for GitHub Releases: no personal file (no key, no SF Pro, which
+                                              Apple's license keeps out); the launcher's sounds, and the Memoji of the
+                                              profiles downloaded from wimell/tapback-memojis (MIT, tools/memoji.py)
     python tools/make-android.py --dev        your own devices, and the page can be inspected from the PC (chrome://inspect)
 
 Needs a JDK 17+, the Android SDK (platforms/android-35, build-tools/35.0.0), Gradle 8.10, Node and Pillow:
@@ -50,8 +52,8 @@ def skip(rel):
         return True                                   # handled below
     if release and (rel.startswith("images/avatars/custom/") or rel.startswith("images/avatars/memoji/")):
         return True
-    if release and (rel.startswith("fonts/") or rel.startswith("sounds/")) and not rel.endswith((".css", ".md", ".txt")):
-        return True
+    if release and rel.startswith("fonts/") and not rel.endswith((".css", ".md", ".txt")):
+        return True                                   # SF Pro: Apple's license, never in a published package
     return False
 for base, dirs, files in os.walk(L):
     for f in files:
@@ -71,6 +73,14 @@ avatars = os.path.join(L, "js", "avatars.local.js")
 have_avatars = not release and os.path.exists(avatars)
 if have_avatars:
     shutil.copy2(avatars, os.path.join(app_dir, "js", "avatars.local.js"))
+elif release:
+    # The Memoji for the profiles, as APL Launcher Setup gives Samsung screens (never your own avatars)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import memoji
+    names = memoji.fetch(os.path.join(app_dir, "images", "avatars", "memoji"))
+    if names:
+        open(os.path.join(app_dir, "js", "avatars.local.js"), "w", encoding="utf-8", newline="\n").write(memoji.avatars_js(names))
+        have_avatars = True
 
 # index.html: no Samsung API (webapis.js is the screen's own file)
 html = open(os.path.join(L, "index.html"), encoding="utf-8").read()

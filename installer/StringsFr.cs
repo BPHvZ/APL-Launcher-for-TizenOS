@@ -478,8 +478,6 @@ namespace APL.Setup
               "Arrête les pubs, le pistage de ce que tu regardes, la télémétrie et les services en trop de LG (environ 390 Mo de mémoire libérés sur une G5). Les mises à jour du logiciel de la TV restent bloquées dans tous les cas : elles enlèveraient le root." },
             { "Turns on APL Launcher's remote buttons service (Accessibility). Twice Home: the App Switcher; held: the Control Center.",
               "Active le service des boutons d'APL Launcher (Accessibilité). Deux fois Home : le multi-apps ; appui long : le centre de contrôle." },
-            { "Your TMDB, YouTube and Fanart.tv keys can't go into the Android package yet: the Top Shelf shows what is popular without them.",
-              "Tes clés TMDB, YouTube et Fanart.tv ne peuvent pas encore aller dans le paquet Android : le Top Shelf montre ce qui est populaire sans elles." },
             { "Type the TV's IP address first.", "Tape d'abord l'adresse IP de la TV." },
             { "This PC needs an SSH client (see above).", "Ce PC a besoin d'un client SSH (voir plus haut)." },
             { "Type Developer Mode's passphrase.", "Tape la phrase secrète du mode développeur." },

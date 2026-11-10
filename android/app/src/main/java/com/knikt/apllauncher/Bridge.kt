@@ -88,6 +88,25 @@ class Bridge(private val ctx: Context, private val host: Host) {
 
     @JavascriptInterface fun installed(pkg: String) = AppList.isInstalled(app, pkg)
 
+    /* Opens an app with one piece of data, as Samsung's app control does (APL TV from the Top Shelf:
+       resume=<title>, channel=<channel>): an Intent extra. */
+    @JavascriptInterface
+    fun launchWith(pkg: String, key: String, value: String): Boolean {
+        if (!Regex("^[a-z]{1,20}$").matches(key) || !Regex("^[A-Za-z0-9_.:|-]{1,80}$").matches(value)) return false
+        val i = AppList.launchIntent(app, pkg) ?: return false
+        return start(i.putExtra(key, value))
+    }
+
+    /* APL TV's Top Shelf: what you were watching and your last channel. On Samsung and LG it is the file
+       /tmp/apltv-shelf.json; on Android APL TV keeps it and hands it to APL Launcher only (its ShelfProvider
+       checks this app's signing certificate). "" without APL TV, with an older APL TV, or before it wrote one. */
+    @JavascriptInterface
+    fun appShelf(): String = try {
+        app.contentResolver.query(Uri.parse("content://com.knikt.apltv.shelf/shelf"), null, null, null, null)?.use { c ->
+            if (c.moveToFirst()) (c.getString(0) ?: "").take(60000) else ""
+        } ?: ""
+    } catch (e: Exception) { Log.w(Web.TAG, "APL TV shelf: $e"); "" }
+
     /* Android's own "Uninstall this app?" */
     @JavascriptInterface
     fun uninstall(pkg: String): Boolean {
@@ -377,6 +396,12 @@ class Bridge(private val ctx: Context, private val host: Host) {
         prefs(app).edit().putString(key, value).apply()
     }
     @JavascriptInterface fun nativePref(key: String): String = prefs(app).getString(key, "") ?: ""
+
+    /* The API keys (TMDB, YouTube, Fanart.tv). The published .apk has none: they are typed in Settings ›
+       Appearance › Top Shelf › Online Services, or sent by APL Launcher Setup with adb (KeysReceiver.kt).
+       Kept in the app's own storage, never in a log. */
+    @JavascriptInterface fun keys(): String = Keys.json(app)
+    @JavascriptInterface fun setKey(name: String, value: String): Boolean = Keys.set(app, name, value)
 
     /* ---------- typing ---------- */
     @JavascriptInterface fun editing(on: Boolean) { host.setEditing(on) }

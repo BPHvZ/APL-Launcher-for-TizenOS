@@ -8,7 +8,8 @@
 #  1. adb: Android's own tool (platform-tools), found on this PC or downloaded once from Google
 #  2. the package: -Apk, else dist\apl-launcher-*-android.apk, else the latest GitHub release's .apk
 #  3. connects to the TV (USB or Network debugging: the TV asks to allow this PC once)
-#  4. installs it, turns on its remote buttons service (Home opens APL Launcher) and opens it
+#  4. installs it, turns on its remote buttons service (Home opens APL Launcher), gives it your TMDB, YouTube and
+#     Fanart.tv keys (-Tmdb -YouTube -Fanart, else the ones saved by APL Launcher Setup) and opens it
 #  -CheckOnly: only says what this PC has (APL-CHECK).
 # ============================================================
 param(
@@ -18,6 +19,7 @@ param(
     [string]$PairCode,
     [string]$Apk,
     [switch]$NoHomeService,     # leaves the remote buttons service off (Home keeps the TV's own launcher)
+    [string]$Tmdb, [string]$YouTube, [string]$Fanart,   # the Top Shelf's keys; none given: the Setup's saved ones
     [string]$Repo = "Knikt/APL-Launcher",
     [switch]$AplTv,             # also installs APL TV (apl-tv-android.apk of Knikt/APL-TV's latest release)
     [string]$AplTvRepo = "Knikt/APL-TV",
@@ -173,6 +175,27 @@ if (-not $NoHomeService) {
     if ($now -match [regex]::Escape($KeyService)) { Write-Host (Tr "        Remote buttons on: Home opens APL Launcher." "        Boutons de la télécommande activés : Home ouvre APL Launcher.") -ForegroundColor Green }
     else { Write-Host (Tr "        The remote buttons service could not be turned on: APL Launcher will offer it at its first start." "        Le service des boutons n'a pas pu être activé : APL Launcher le proposera à son premier démarrage.") -ForegroundColor Yellow }
 }
+# The API keys: the published .apk has none and can't be changed here (it is signed with APL Launcher's key), so
+# they go to the app itself (KeysReceiver.kt, which only adb and the system may call). Never written to the log.
+$keyArgs = @()
+$given = $PSBoundParameters.ContainsKey('Tmdb') -or $PSBoundParameters.ContainsKey('YouTube') -or $PSBoundParameters.ContainsKey('Fanart')
+$k = @{ tmdb = $Tmdb; youtube = $YouTube; fanart = $Fanart }
+$keysSaved = Join-Path $env:APPDATA "APL-Launcher\keys.local.js"
+if (-not $given -and (Test-Path -LiteralPath $keysSaved)) {
+    $txt = [IO.File]::ReadAllText($keysSaved)
+    foreach ($n in @('tmdb', 'youtube', 'fanart')) { $m = [regex]::Match($txt, "\b$n\s*:\s*`"([A-Za-z0-9_-]+)`""); if ($m.Success) { $k[$n] = $m.Groups[1].Value } }
+}
+foreach ($n in @('tmdb', 'youtube', 'fanart')) {
+    $v = ("" + $k[$n]) -replace '[^A-Za-z0-9_-]', ''
+    if ($v.Length -ge 8) { $keyArgs += @('--es', $n, $v) }
+}
+if ($keyArgs.Count) {
+    $r = Adb (@('-s', $serial, 'shell', 'am', 'broadcast', '-a', 'com.knikt.apllauncher.SET_KEYS', '-n', "$AppId/.KeysReceiver") + $keyArgs)
+    $n = $keyArgs.Count / 3
+    if ($r.Output -match 'result=1') { Write-Host (Tr "        $n key(s) given to APL Launcher (Top Shelf)." "        $n clé(s) donnée(s) à APL Launcher (Top Shelf).") -ForegroundColor Green }
+    else { Write-Host (Tr "        The keys could not be given to APL Launcher: type them on the TV, Settings › Appearance › Top Shelf › Online Services." "        Les clés n'ont pas pu être données à APL Launcher : tape-les sur la TV, Réglages › Apparence › Top Shelf › Services en ligne.") -ForegroundColor Yellow }
+}
+
 # ---------- APL TV (optional: never stops the install) ----------
 if ($AplTv) {
     Step 5 (Tr "Installing APL TV…" "Installation d'APL TV…")

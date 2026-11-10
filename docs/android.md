@@ -2,16 +2,16 @@
 
 APL Launcher also runs on Android TV and Google TV, as a real launcher app: the same Home Screen, Settings, Control Center, Search, profiles and screen saver as on Samsung, from the same code. No root needed.
 
-> **Status: first version, not released.** Tried in the Android TV 14 emulator only (`AOSP TV on x86`): not yet on a real box, TV or on Google TV.
+> **Status: released in 1.1.0.** Tried in the Android TV 14 emulator only (`AOSP TV on x86`): not yet on a real box, TV or on Google TV.
 
 ## Install
 
-1. Get the `.apk` (not on GitHub Releases yet; to build it, see [Building](#building)).
+1. Get the `.apk` from the [latest release](https://github.com/Knikt/APL-Launcher/releases/latest), or on the TV with the Downloader app, code **9890834** (to build it yourself, see [Building](#building)). APL Launcher Setup does steps 2 to 4 for you, your API keys included.
 2. On the TV, in *Settings*, find *About* and press OK seven times on the build number (*Android TV OS build* on Google TV) to get *Developer options*, then turn on *USB debugging* (or *Network debugging*).
 3. From the PC, on the same network:
    ```
    adb connect <tv-ip>
-   adb install apl-launcher-v1.0.24-android.apk
+   adb install apl-launcher-vX.Y.Z-android.apk
    ```
    The Downloader app works too, from a link to the `.apk`.
 4. Open APL Launcher from the TV's app list. At its first starts it asks for what Home needs (way A below), until Home opens it, three times at most:
@@ -19,6 +19,19 @@ APL Launcher also runs on Android TV and Google TV, as a real launcher app: the 
    - elsewhere it first offers Android's own *Set as default home app* question, then the remote buttons if Home still isn't APL Launcher. Not tried: the emulator's launcher keeps the button.
 
    *Later* waits for the next start; *Settings › Android TV* has the same steps.
+
+## The Top Shelf's keys (TMDB, YouTube, Fanart.tv)
+
+The published `.apk` has no API key, and it can't be changed on your PC (it is signed with APL Launcher's own key). The keys are kept by the app instead, in its own storage:
+
+- **On the TV**: *Settings › Appearance › Top Shelf › Online Services*, OK on a key, then type it (Android's keyboard, or the Google TV app on your phone). A TMDB key is checked with TMDB right away, and a refused one never replaces the one already there. *Remove the Typed Keys* removes them.
+- **From the PC**: APL Launcher Setup sends the keys of its *Install* page (`scripts/install-android.ps1 -Tmdb … -YouTube … -Fanart …`, else the ones the Setup saved). By hand:
+  ```
+  adb shell am broadcast -a com.knikt.apllauncher.SET_KEYS -n com.knikt.apllauncher/.KeysReceiver --es tmdb <key> --es youtube <key> --es fanart <key>
+  ```
+  Only adb and the system may send this (`KeysReceiver.kt` asks for `WRITE_SECURE_SETTINGS`, which apps can't have). The launcher starts again with them. Tried in the emulator: the Setup's script gave the published `.apk` its three keys, and YouTube's Top Shelf showed what is trending.
+
+Without keys, *Settings › Appearance › Dynamic Backdrops* still shows a film or series each service streams now (JustWatch, no key).
 
 ## Make Home open APL Launcher
 
@@ -99,7 +112,7 @@ Optional, with adb: `adb shell appops set com.knikt.apllauncher GET_USAGE_STATS 
 - The Bluetooth list inside the Control Center (Android's own screen opens instead).
 - The Wi-Fi network's name: Android hides it from apps without the location permission (shown as —).
 - Automatic updates of the launcher: they come with a new `.apk`.
-- *What You're Watching* in the Top Shelf: on Samsung it reads the apps' rows for Samsung's home; Android TV's *Watch Next* list can't be read by other apps.
+- *What You're Watching* in the Top Shelf: on Samsung it reads the apps' rows for Samsung's home; Android TV's *Watch Next* list can't be read by other apps. APL TV's *Continue Watching* and *Last Channel* do show: APL TV hands them to APL Launcher itself (its `ShelfProvider`, from the APL TV version after 1.0.12, which answers APL Launcher only, checked by its signing certificate). Tried in the emulator: the cards showed, and OK opened APL TV right in the film, at its minute, or on the channel.
 
 **Would need root** (a second phase, only if wanted):
 - Closing apps on Android 14 and later, and on any version closing the one in front and those playing in the background, so *Close Unused Apps*, *Free Up Memory* and the App Switcher's ▲ work everywhere.
@@ -110,8 +123,8 @@ Optional, with adb: `adb shell appops set com.knikt.apllauncher GET_USAGE_STATS 
 ## Building
 
 ```
-python tools/make-android.py              # your own devices: your keys, fonts, sounds and avatars (never publish it)
-python tools/make-android.py --release    # the package for GitHub Releases: no personal file
+python tools/make-android.py              # your own devices: your keys, fonts and avatars (never publish it)
+python tools/make-android.py --release    # the package for GitHub Releases: no key, no SF Pro (Apple's license); the sounds, and the Memoji (tools/memoji.py)
 python tools/make-android.py --dev        # your own devices, the page can be inspected from the PC (chrome://inspect)
 ```
 
@@ -133,6 +146,7 @@ On a machine without that key, the script signs with the Android SDK's test key 
 | The Home Screen: a WebView with the launcher, Home and the remote's keys (sent with Samsung's key codes) | `android/app/.../MainActivity.kt`, `Web.kt` |
 | What the page asks of Android (`window.APLAndroid`): apps, launching, sound, network, Android's screens, sleep… | `Bridge.kt`, `AppList.kt`, `SleepReceiver.kt` |
 | The remote over every app, the app in front, Close Unused Apps | `KeyService.kt` (accessibility service) |
+| The API keys, kept by the app and sent by APL Launcher Setup | `KeysReceiver.kt` |
 | The Control Center over apps | `Overlay.kt`, `android/web/cc.html` |
 | The launcher's Samsung calls turned into Android ones, Settings and Control Center for Android | `android/web/android.js` |
 

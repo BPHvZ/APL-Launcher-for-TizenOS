@@ -207,14 +207,15 @@ namespace APL.Setup
 
             // ---- options ----
             StackPanel opts;
-            formView.Children.Add(Card("", "Purple", T("Options"), lg ? T("All optional. Leave a key empty to do without that feature.") : T("What the Setup turns on for you."), out opts));
+            formView.Children.Add(Card("", "Purple", T("Options"), T("All optional. Leave a key empty to do without that feature."), out opts));
+            // The keys: in the package on LG; sent to the app over adb on Android TV (its .apk is signed with APL Launcher's key)
+            opts.Children.Add(Field(T("TMDB key"), T("The live Top Shelf, and artwork for films and series."), out tmdbBox, T("Not set")));
+            opts.Children.Add(Ui.Separator(new Thickness(0)));
+            opts.Children.Add(Field(T("YouTube key"), T("Shows YouTube trends in the Top Shelf."), out youTubeBox, T("Not set")));
+            opts.Children.Add(Ui.Separator(new Thickness(0)));
+            opts.Children.Add(Field(T("Fanart.tv key"), T("HD logos and textless backgrounds."), out fanartBox, T("Not set")));
             if (lg)
             {
-                opts.Children.Add(Field(T("TMDB key"), T("The live Top Shelf, and artwork for films and series."), out tmdbBox, T("Not set")));
-                opts.Children.Add(Ui.Separator(new Thickness(0)));
-                opts.Children.Add(Field(T("YouTube key"), T("Shows YouTube trends in the Top Shelf."), out youTubeBox, T("Not set")));
-                opts.Children.Add(Ui.Separator(new Thickness(0)));
-                opts.Children.Add(Field(T("Fanart.tv key"), T("HD logos and textless backgrounds."), out fanartBox, T("Not set")));
                 if (rooted)
                 {
                     opts.Children.Add(Ui.Separator(new Thickness(0)));
@@ -228,10 +229,10 @@ namespace APL.Setup
             }
             else
             {
+                opts.Children.Add(Ui.Separator(new Thickness(0)));
                 opts.Children.Add(ToggleRow(T("Home opens APL Launcher"), T("Turns on APL Launcher's remote buttons service (Accessibility). Twice Home: the App Switcher; held: the Control Center."), out homeServiceToggle, true));
                 opts.Children.Add(Ui.Separator(new Thickness(0)));
                 opts.Children.Add(ToggleRow(T("Also install APL TV"), AplTvHelp(), out aplTvToggle, true));
-                opts.Children.Add(Ui.Text(T("Your TMDB, YouTube and Fanart.tv keys can't go into the Android package yet: the Top Shelf shows what is popular without them."), "Secondary", new Thickness(2, 4, 0, 4)));
             }
             RenderStatus();
             RenderPc();
@@ -312,12 +313,9 @@ namespace APL.Setup
         internal void Prefill()
         {
             ipBox.Text = SavedIp();
-            if (lg)
-            {
-                var k = Saved.Keys();
-                tmdbBox.Text = k.Tmdb; youTubeBox.Text = k.YouTube; fanartBox.Text = k.Fanart;
-                sites = k.Sites;
-            }
+            var k = Saved.Keys();
+            tmdbBox.Text = k.Tmdb; youTubeBox.Text = k.YouTube; fanartBox.Text = k.Fanart;
+            if (lg) sites = k.Sites;
         }
 
         private string SavedIp()
@@ -648,12 +646,12 @@ namespace APL.Setup
             if (!CanInstall) return;
             var args = new List<string> { "-Unattended", "-TvIp", Ip };
             var secrets = new List<string>();
+            string tm = tmdbBox.Text.Trim(), yt = youTubeBox.Text.Trim(), fa = fanartBox.Text.Trim();
+            secrets.AddRange(new[] { tm, yt, fa });
             if (lg)
             {
-                string tm = tmdbBox.Text.Trim(), yt = youTubeBox.Text.Trim(), fa = fanartBox.Text.Trim();
                 string sitesJson = "[" + string.Join(",", sites.Select(s => "{\"name\":" + Json.Quote(s.Name) + ",\"url\":" + Json.Quote(s.Url) + "}")) + "]";
                 args.AddRange(new[] { "-Tmdb", tm, "-YouTube", yt, "-Fanart", fa, "-Sites", Convert.ToBase64String(Encoding.UTF8.GetBytes(sitesJson)) });
-                secrets.AddRange(new[] { tm, yt, fa });
                 if (rooted)
                 {
                     string pw = passwordBox.Text.Length > 0 ? passwordBox.Text : "alpine";
@@ -675,6 +673,7 @@ namespace APL.Setup
                     args.AddRange(new[] { "-PairPort", pairPortBox.Text.Trim(), "-PairCode", pairCodeBox.Text.Trim() });
                     secrets.Add(pairCodeBox.Text.Trim());
                 }
+                args.AddRange(new[] { "-Tmdb", tm, "-YouTube", yt, "-Fanart", fa });
                 if (homeServiceToggle.IsChecked != true) args.Add("-NoHomeService");
             }
             withAplTv = aplTvToggle.IsChecked == true;

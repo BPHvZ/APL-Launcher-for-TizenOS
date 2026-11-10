@@ -66,7 +66,7 @@
             "Found, not used": "Présent, pas utilisé",
             "APL Launcher works without root. With root, a later version could close every app and reach deeper settings.":
                 "APL Launcher marche sans root. Avec le root, une version future pourrait fermer toutes les apps et atteindre des réglages plus profonds.",
-            "Setup guide: github.com/Knikt/APL-Launcher-for-TizenOS, docs/android.md.": "Guide d'installation : github.com/Knikt/APL-Launcher-for-TizenOS, docs/android.md.",
+            "Setup guide: github.com/Knikt/APL-Launcher, docs/android.md.": "Guide d'installation : github.com/Knikt/APL-Launcher, docs/android.md.",
             "Home app, remote buttons, the Control Center over apps.": "App d'accueil, touches de la télécommande, Centre de contrôle sur les apps.",
             "Android Settings": "Réglages Android",
             "Android's own settings: Wi-Fi, picture, sound, date, language, accounts, apps, reset.": "Les réglages d'Android : Wi-Fi, image, son, date, langue, comptes, apps, réinitialisation.",
@@ -106,11 +106,56 @@
             "All set: Home now opens APL Launcher.": "C'est prêt : le bouton Accueil ouvre maintenant APL Launcher.",
             "Not yet: in Accessibility, choose APL Launcher and turn it on. Settings › Android TV has it too.":
                 "Pas encore : dans Accessibilité, choisissez APL Launcher et activez-le. C'est aussi dans Réglages › Android TV.",
-            "Other": "Autre"
+            "Other": "Autre",
+            "Type the key, then OK. The Google TV app on your phone can type it too. Back to cancel.":
+                "Tapez la clé, puis OK. L'app Google TV de votre téléphone peut aussi la taper. Retour pour annuler.",
+            "Saved: the Top Shelf uses it now.": "Enregistrée : le Top Shelf l'utilise maintenant.",
+            "This doesn't look like a key.": "Ça ne ressemble pas à une clé.",
+            "TMDB refused this key: check it on themoviedb.org.": "TMDB refuse cette clé : vérifiez-la sur themoviedb.org.",
+            "Films and series in What's Popular. Free on themoviedb.org › Settings › API (API Key). OK to type it.":
+                "Films et séries dans Ce qui est populaire. Gratuite sur themoviedb.org › Paramètres › API (clé d'API). OK pour la taper.",
+            "Optional: trending videos in YouTube's Top Shelf (YouTube Data API v3, console.cloud.google.com). OK to type it.":
+                "Optionnelle : vidéos tendance dans le Top Shelf de YouTube (YouTube Data API v3, console.cloud.google.com). OK pour la taper.",
+            "Optional: HD backgrounds for movies and shows (fanart.tv › your profile › API Key). OK to type it.":
+                "Optionnelle : fonds HD des films et séries (fanart.tv › votre profil › API Key). OK pour la taper.",
+            "The keys are kept on this device. Type them here, or APL Launcher Setup sends them from the PC.":
+                "Les clés restent sur cet appareil. Tapez-les ici, ou APL Launcher Setup les envoie depuis le PC.",
+            "Remove the Typed Keys": "Effacer les clés tapées",
+            "The Top Shelf goes back to the keys in the app, if it has any.": "Le Top Shelf revient aux clés de l'app, si elle en a.",
+            "Keys removed.": "Clés effacées."
         };
         for (var k in add) if (Object.prototype.hasOwnProperty.call(add, k) && !Object.prototype.hasOwnProperty.call(FR, k)) FR[k] = add[k];
     }
     var T = APL.t;
+
+    /* ---------- the API keys ----------
+       The published .apk has none (tools/make-android.py --release): they are kept by the app (Bridge.keys,
+       KeysReceiver.kt), typed in Settings › Appearance › Top Shelf › Online Services or sent by APL Launcher
+       Setup over adb. liveshelf.js and autoart.js read the same window.APL_KEYS object: filled in place here,
+       before launcher.js starts. A key kept by the app wins over the one in the package (your own build). */
+    var KEY_NAMES = ["tmdb", "youtube", "fanart"];
+    var KEYS = global.APL_KEYS = global.APL_KEYS || {};
+    var builtIn = {};
+    KEY_NAMES.forEach(function (n) { builtIn[n] = KEYS[n] || ""; });
+    function applyKeys() {
+        var saved = B.keys ? json(B.keys(), {}) : {};
+        KEY_NAMES.forEach(function (n) { KEYS[n] = saved[n] || builtIn[n]; });
+        // The Top Shelf kept what it found without them (6 h): another set of keys starts it again
+        var seen = KEY_NAMES.map(function (n) { return KEYS[n] ? n : ""; }).join(",");
+        try {
+            if (global.localStorage.getItem("apl.keysSeen") !== seen) {
+                var del = [];
+                for (var i = 0; i < global.localStorage.length; i++) {
+                    var k = global.localStorage.key(i);
+                    if (k && k.indexOf("apl.live.") === 0) del.push(k);
+                }
+                del.forEach(function (k) { global.localStorage.removeItem(k); });
+                global.localStorage.setItem("apl.keysSeen", seen);
+            }
+        } catch (e) {}
+    }
+    applyKeys();
+
     function needsService() { return T("Turn on APL Launcher in Android's Accessibility settings first (Settings › Android TV › Remote Buttons)."); }
     function fail(msg) { return Promise.reject(new Error(msg)); }
     function needsRoot() { return fail(T("This needs root on Android.")); }
@@ -140,8 +185,16 @@
 
     /* Typing (folder and profile names): the keys go to Android's keyboard meanwhile */
     function isField(n) { return !!n && (n.tagName === "INPUT" || n.tagName === "TEXTAREA" || n.isContentEditable); }
-    document.addEventListener("focusin", function (e) { if (isField(e.target)) B.editing(true); }, true);
-    document.addEventListener("focusout", function (e) { if (isField(e.target)) B.editing(false); }, true);
+    /* Told to Android only when it changes: Android taking the keyboard's focus made the field lose it and get it
+       back again and again (tried in the emulator), and a name or a key could not be typed. */
+    var editingNow = false, editOff = null;
+    function setEditing(on) { if (on !== editingNow) { editingNow = on; B.editing(on); } }
+    document.addEventListener("focusin", function (e) { if (isField(e.target)) { clearTimeout(editOff); setEditing(true); } }, true);
+    document.addEventListener("focusout", function (e) {
+        if (!isField(e.target)) return;
+        clearTimeout(editOff);
+        editOff = setTimeout(function () { if (!isField(document.activeElement)) setEditing(false); }, 300);
+    }, true);
 
     /* ---------- APL.sys: the device ---------- */
     sys.PREVIEW = false;
@@ -295,6 +348,12 @@
         });
     };
     APL.launchApp = function (id) { return B.launch(String(id)) ? Promise.resolve() : fail(T("Can't launch the app")); };
+
+    /* APL TV's Top Shelf (widgets.js): APL TV keeps it for APL Launcher only (its ShelfProvider) */
+    if (B.appShelf) sys.appShelf = function () {
+        var shelf = json(B.appShelf(), null);
+        return shelf ? Promise.resolve(shelf) : fail("nothing to read");
+    };
     APL.isInstalled = function (id) { return Promise.resolve(!!B.installed(String(id))); };
     APL.openUrl = function (url) { return B.openUrl(String(url)) ? Promise.resolve() : fail(T("Can't open Internet")); };
     APL.launchDeepLink = function () { return fail(T("Can't launch the app")); };
@@ -315,6 +374,12 @@
     var homeName = String(B.systemHomeName() || "") || T("Home Screen of the device");
     APL.platform = {
         name: "android",
+        /* An app opened with one piece of data (APL TV from the Top Shelf: resume / channel), as an Intent extra */
+        launch: function (id, params) {
+            var key = Object.keys(params || {})[0];
+            if (!key || !B.launchWith) return fail(T("Can't launch the app"));
+            return B.launchWith(String(id), key, String(params[key])) ? Promise.resolve() : fail(T("Can't launch the app"));
+        },
         packages: { setPackageInfoEventListener: function (l) { pkgListener = l; } },
         /* The launcher's own tiles: no Sources yet; Smart Hub becomes the device's own home */
         virtualApps: function (list) {
@@ -398,8 +463,70 @@
         }, T("How the Control Center opens over an app: through the remote buttons (Accessibility), or the “draw over other apps” permission given with adb.")));
         rows.push(infoRow(T("Root"), function () { return fresh().root ? T("Found, not used") : T("Not needed"); },
             T("APL Launcher works without root. With root, a later version could close every app and reach deeper settings.")));
-        rows.push(infoRow("docs/android.md", function () { return ""; }, T("Setup guide: github.com/Knikt/APL-Launcher-for-TizenOS, docs/android.md.")));
+        rows.push(infoRow("docs/android.md", function () { return ""; }, T("Setup guide: github.com/Knikt/APL-Launcher, docs/android.md.")));
         return menu(info.googleTv ? "Google TV" : "Android TV", "display", rows, T("Home app, remote buttons, the Control Center over apps."));
+    }
+
+    /* Online Services: each key is typed on the TV (Android's keyboard, or the Google TV app on a phone) */
+    var KEY_LABELS = { tmdb: "TMDB Key", youtube: "YouTube Key", fanart: "Fanart.tv Key" };
+    var KEY_DESCS = {
+        tmdb: "Films and series in What's Popular. Free on themoviedb.org › Settings › API (API Key). OK to type it.",
+        youtube: "Optional: trending videos in YouTube's Top Shelf (YouTube Data API v3, console.cloud.google.com). OK to type it.",
+        fanart: "Optional: HD backgrounds for movies and shows (fanart.tv › your profile › API Key). OK to type it."
+    };
+    function keyRows() {
+        var rows = KEY_NAMES.map(function (n) {
+            return { type: "info", label: T(KEY_LABELS[n]), desc: T(KEY_DESCS[n]),
+                     get: function () { return KEYS[n] ? T("Configured") : T("Missing"); },
+                     run: function (done) { askKey(n, done); } };
+        });
+        rows.push(action(T("Remove the Typed Keys"), function (done) {
+            KEY_NAMES.forEach(function (n) { B.setKey(n, ""); });
+            applyKeys();
+            if (done) done();
+            toast(T("Keys removed."), true);
+        }, T("The Top Shelf goes back to the keys in the app, if it has any."), "trash"));
+        return rows;
+    }
+    function askKey(name, done) {
+        var box = document.createElement("div");
+        box.className = "pprompt";
+        box.innerHTML = '<div class="pprompt__box"><h2 class="pprompt__title"></h2>' +
+            '<input class="pprompt__input" type="text" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false">' +
+            '<p class="pprompt__hint"></p></div>';
+        box.querySelector("h2").textContent = T(KEY_LABELS[name]);
+        box.querySelector("p").textContent = T("Type the key, then OK. The Google TV app on your phone can type it too. Back to cancel.");
+        document.body.appendChild(box);
+        var input = box.querySelector("input"), over = false;
+        function finish(ok) {
+            if (over) return;
+            over = true;
+            var v = String(input.value || "").replace(/\s+/g, "");
+            if (box.parentNode) box.parentNode.removeChild(box);
+            if (!ok || !v) return;
+            if (!/^[A-Za-z0-9_-]{8,100}$/.test(v)) { toast(T("This doesn't look like a key.")); return; }
+            function save() {
+                if (!B.setKey(name, v)) { toast(T("This doesn't look like a key.")); return; }
+                applyKeys();
+                if (done) done();
+                toast(T("Saved: the Top Shelf uses it now."), true);
+            }
+            if (name !== "tmdb") { save(); return; }
+            // TMDB says at once whether the key is right: a refused one never replaces the key already there
+            var x = new global.XMLHttpRequest();
+            x.open("GET", "https://api.themoviedb.org/3/configuration?api_key=" + encodeURIComponent(v));
+            x.timeout = 15000;
+            x.onload = function () { if (x.status === 401) toast(T("TMDB refused this key: check it on themoviedb.org.")); else save(); };
+            x.onerror = x.ontimeout = save;          // no network now: kept, it is checked when the Top Shelf asks
+            x.send();
+        }
+        input.addEventListener("keydown", function (e) {
+            if (e.keyCode === 13) { e.preventDefault(); e.stopPropagation(); finish(true); }
+            else if (e.keyCode === 27 || e.keyCode === 10009) { e.preventDefault(); e.stopPropagation(); finish(false); }
+        });
+        // Android's keyboard can take the focus when it closes ("Done"): what was typed is kept, as for profile names
+        input.addEventListener("blur", function () { setTimeout(function () { if (document.activeElement !== input) finish(true); }, 300); });
+        setTimeout(function () { input.focus(); }, 50);
     }
 
     var baseTree = APL.settingsTree;
@@ -410,6 +537,11 @@
 
         var appearance = find(top, "Appearance"), shelf = appearance && find(appearance.children, "Top Shelf");
         if (shelf) shelf.children = without(shelf.children, ["What You're Watching"]);   // Samsung's home rows
+        var online = shelf && find(shelf.children, "Online Services");
+        if (online && B.setKey) {
+            online.desc = T("The keys are kept on this device. Type them here, or APL Launcher Setup sends them from the PC.");
+            online.children = keyRows();
+        }
 
         var home = find(top, "Home Screen");
         if (home) {

@@ -409,10 +409,11 @@
     /* APL TV writes its Top Shelf itself, in /tmp/apltv-shelf.json (APL TV's helper service, js/app.js
        pushShelf): titles, pictures, progress and the data to open each one in APL TV. No addresses and no
        account in it. Read as it is; OK on a card opens APL TV at that title or channel (app control
-       "resume" / "channel"). */
+       "resume" / "channel"). On Android, APL TV keeps it for APL Launcher only (its ShelfProvider), read
+       through sys.appShelf (android/web/android.js). */
     var APLTV = "APLTVMedia.TV", APLTV_LG = "com.knikt.apltv";
     function apltvShelf() {
-        // LG: no shell there, the launcher's own service hands the file over (webos/service, "shelf")
+        // LG: no shell there, the launcher's own service hands the file over (webos/service, "shelf"); Android: APL TV's ShelfProvider
         if (sys.appShelf) return sys.appShelf();
         return sys.exec("head -c 60000 /tmp/apltv-shelf.json 2>/dev/null").then(function (r) {
             try { return JSON.parse(String(r.output || "")); } catch (e) { throw new Error("nothing to read"); }
@@ -454,8 +455,8 @@
     function pick(data, key) { var v = data && data[key]; return v && /^[A-Za-z0-9_.:|-]{1,80}$/.test(String(v)) ? { key: key, value: String(v) } : null; }
     /* Opens the app with one piece of app control data (APL TV: resume=<title>, channel=<channel>) */
     function launchWith(app, launch) {
-        // LG: the same data as launch parameters ({"resume": "…"}, {"channel": "…"})
-        if (sys.platform === "webos" && APL.platform && APL.platform.launch) {
+        // LG: the same data as launch parameters ({"resume": "…"}, {"channel": "…"}); Android: as an Intent extra
+        if ((sys.platform === "webos" || sys.platform === "android") && APL.platform && APL.platform.launch) {
             var params = {};
             params[launch.key] = launch.value;
             if (APL.sys.profiles) APL.sys.profiles.noteLaunch(app.id);

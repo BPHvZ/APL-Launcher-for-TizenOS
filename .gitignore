@@ -35,8 +35,6 @@ tools/art/.cache/
 launcher/js/keys.local.js
 # Avatars added by the installer (your Memoji, Apple's Memoji): never published
 launcher/js/avatars.local.js
-# Personal interface sounds (launcher/sounds/README.md): never published
-launcher/sounds/*.wav
 launcher/images/avatars/custom/
 launcher/images/avatars/memoji/
 
