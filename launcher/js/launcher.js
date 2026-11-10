@@ -242,7 +242,9 @@
             global.setTimeout(paintBlur, 400);            // a decode that never settles
         };
         img.onerror = function () { if (token === blurToken) dom.bgBlur.style.background = backdropFor(app); };
-        img.src = src;
+        /* The canvas is small (blurLayer): TMDB's 300 px copy of the picture. Its 4K original was decoded
+           whole by the page itself when the canvas was drawn, 0.4 s at a time on an LG G5 */
+        img.src = APL.artSize ? APL.artSize(src, "w300") : src;
     }
 
     /* The blurred background is only prepared when entering the grid: computing it on
@@ -1217,6 +1219,7 @@
 
     function boot() {
         cacheDom();
+        if (APL.ccOverlay) { bootCc(); return; }
         dom.hint.querySelector(".hint__text").textContent = APL.t("Press ▲ for full screen");   // index.html only has the English text
         startClock();
         APL.sys.registerKeys();
@@ -1245,6 +1248,18 @@
             if (requestedAction()) runAction(requestedAction());   // opened for a specific reason: TizenTube, App Switcher…
             setTimeout(function () { dom.boot.classList.add("is-hidden"); }, 120);
         });
+    }
+
+    /* The Control Center over the apps (LG's Guide button, webos.js): nothing of the Home Screen, no app
+       list, no artwork, no timers; the panel at once, and the window goes when it closes. */
+    function bootCc() {
+        APL.sys.registerKeys();
+        document.body.classList.toggle("reduce-motion", !!APL.sys.pref("reduceMotion"));
+        applyPerf();
+        applyTheme();
+        global.APL_BOOT_OK = true;
+        dom.boot.classList.add("is-hidden");
+        if (APL.controlCenter) APL.controlCenter.open();
     }
 
     /* Full list: the dock (your apps, Settings, Sources), then your websites,
@@ -1563,7 +1578,8 @@
 
     /* Performance mode: no real-time blur or glass (which made the screen lag). */
     function applyPerf() {
-        document.body.classList.toggle("perf", !APL.sys.pref("visualEffects"));
+        // Over an app there is no picture behind the glass to bend: the plain tiles
+        document.body.classList.toggle("perf", !!APL.ccOverlay || !APL.sys.pref("visualEffects"));
     }
 
     /* Tip shown on the first start-ups. */
@@ -1580,6 +1596,8 @@
        another press opens / closes Control Center, like the TV button on Apple TV. */
     var lastShown = Date.now(), switcherOnShow = false;
     document.addEventListener("visibilitychange", function () {
+        // Over the apps, something else came in front (Home, an app the Control Center opened): it goes
+        if (APL.ccOverlay) { if (document.hidden && APL.controlCenter) APL.controlCenter.close(); return; }
         // An app opens over the Home Screen: coming back, it is at rest again, not still in full screen
         if (document.hidden) { if (mode === "full") setMode("shelf"); return; }
         lastShown = Date.now();
@@ -1607,13 +1625,30 @@
         }
         else if (action === "settings") APL.settings.open();
         else if (action === "connexions") APL.settings.open(APL.t("Connection"));
+        // The Control Center drawn over the apps (LG, webos.js) asks for the launcher's own pages
+        else if (action.indexOf("settings:") === 0) APL.settings.open(action.substr(9));
+        else if (action === "sources") APL.openSources();
+        else if (action === "search") { if (APL.search) APL.search.open(); }
+        else if (action === "profiles") { if (APL.profilesUI) APL.profilesUI.open(); }
+        else if (action === "screensaver") whenShown(function () { if (APL.screensaver) APL.screensaver.start(); });
         else if (action === "alexa") APL.services.alexaMic();
         else if (action.indexOf("open:") === 0) openById(action.substr(5));   // "Alexa, turn on…"
+    }
+    /* fn once the launcher is on screen: coming back to the front stops a screen saver (screensaver.js) */
+    function whenShown(fn) {
+        if (!document.hidden) { fn(); return; }
+        document.addEventListener("visibilitychange", function once() {
+            if (document.hidden) return;
+            document.removeEventListener("visibilitychange", once);
+            setTimeout(fn, 400);
+        });
     }
     function openById(id) {
         for (var i = 0; i < allApps.length; i++) if (allApps[i].id === id) { APL.goHome(); APL.openApp(allApps[i]); return; }
     }
     global.addEventListener("appcontrol", function () {
+        // Over the apps, Guide pressed again: the Control Center closes, and its window with it
+        if (APL.ccOverlay) { requestedAction(); if (APL.controlCenter) APL.controlCenter.toggle(); return; }
         var action = requestedAction();
         if (action) { lastShown = Date.now(); runAction(action); return; }
         // Two quick presses on Home: the App Switcher, as on Apple TV
@@ -1639,7 +1674,10 @@
     APL.toast = function (m, info) { toast(m, info); };
     APL.allApps = function () { return allApps; };
     APL.reloadApps = function () { render(); };
-    APL.openSources = function () { if (APL.sources) APL.sources.open(); };
+    APL.openSources = function () {
+        if (APL.ccOverlay && APL.platform.toLauncher) { APL.platform.toLauncher("sources"); return; }    // over the apps (webos.js)
+        if (APL.sources) APL.sources.open();
+    };
 
     /* Control Center: Play/Pause or the red key (C on the keyboard in the PC preview). */
     APL.addHotkey(function (code) {

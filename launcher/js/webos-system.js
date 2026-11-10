@@ -45,7 +45,7 @@
             if (startedRooted === null) startedRooted = r;
             if (r) readHome();
             if (!r && ++rootTries < 12) setTimeout(readRoot, 15000);
-            if (r && !startedRooted) {
+            if (r && !startedRooted && !APL.ccOverlay) {
                 var again = false;
                 try { again = global.sessionStorage.getItem("apl.webos.rootReload") !== "1"; global.sessionStorage.setItem("apl.webos.rootReload", "1"); } catch (e) {}
                 if (again) { setTimeout(function () { global.location.reload(); }, 500); return; }
@@ -247,8 +247,10 @@
             try { global.localStorage.setItem(DEV_KEY, JSON.stringify(devm)); } catch (e) {}
         }, function (e) { devm.error = e.message; });
     }
-    setTimeout(devCheck, 8000);
-    setInterval(devCheck, 3600 * 1000);
+    if (!APL.ccOverlay) {                   // the launcher does it, not the Control Center over the apps
+        setTimeout(devCheck, 8000);
+        setInterval(devCheck, 3600 * 1000);
+    }
     P.devmode = function () {
         if (devm.hours === undefined) return devm.error ? t("Unavailable") : "…";
         var left = Math.max(0, devm.hours - Math.floor((Date.now() - (devm.at || Date.now())) / 3600000));

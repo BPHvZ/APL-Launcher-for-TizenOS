@@ -252,7 +252,7 @@
         });
     }
     // Once after start-up: the ports and the devices Samsung recognized may have changed since last time
-    setTimeout(function () {
+    if (!APL.ccOverlay) setTimeout(function () {
         refreshPorts().then(function (changed) { if (changed && pinned().length && APL.refreshHome) APL.refreshHome(); });
     }, 20000);
 
