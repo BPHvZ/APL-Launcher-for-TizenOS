@@ -2,7 +2,7 @@
 
 APL Launcher also runs on Android TV and Google TV, as a real launcher app: the same Home Screen, Settings, Control Center, Search, profiles and screen saver as on Samsung, from the same code. No root needed.
 
-> **Status: released in 1.1.0.** Tried in the Android TV 14 emulator only (`AOSP TV on x86`): not yet on a real box, TV or on Google TV.
+> **Status: released since 1.1.0.** Tried in the Android TV 14 emulator only (`AOSP TV on x86`): not yet on a real box, TV or on Google TV.
 
 ## Install
 

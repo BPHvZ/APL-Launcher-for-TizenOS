@@ -1,8 +1,8 @@
 {
- "version": "1.1.0",
+ "version": "1.1.1",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "LG TVs and Android TV, a Setup that starts with your TV, APL Overlay on Tizen 6, and the focused card in Sources is white again",
+ "notes": "Android TV: APL TV's Continue Watching and your API keys in the Top Shelf, and a name or a key can be typed again; the launcher's own sounds and the Memoji in the packages",
  "scripts": [
   "js/diag.js",
   "js/webos.js",

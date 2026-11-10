@@ -104,7 +104,7 @@ C'est toujours la dernière version. Installe-la, puis ouvre APL Launcher : il d
 
 ```sh
 adb connect <ip-de-la-tv>
-adb install -r apl-launcher-v1.1.0-android.apk
+adb install -r apl-launcher-v1.1.1-android.apk
 ```
 
 Puis ouvre APL Launcher une fois. Plus de détails, dont la touche Home : [docs/android.md](docs/android.md).
