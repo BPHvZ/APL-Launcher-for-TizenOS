@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.1.3
-- **LG and Android TV: the launcher says when a new version is out.** They can't update themselves like Samsung: once per version, on the Home Screen, a message gives the new version and how to get it. On LG with the Homebrew Channel: *Open the Homebrew Channel* (then APL Launcher › Update), or *Add the Repository* (its address already typed in) when APL Launcher isn't in its list yet. On LG without it: run APL Launcher Setup again. On Android TV: the Downloader code 9890834, or the Setup. *Settings › General & Privacy › Updates › Check for Update* asks right away. Tried on an LG OLED G5.
+- **LG and Android TV: the launcher says when a new version is out.** They can't update themselves like Samsung: once per version, on the Home Screen, a message gives the new version and how to get it. On LG with the Homebrew Channel: *Open the Homebrew Channel* (then APL Launcher › Update), or *Add the Repository* (its address already typed in) when APL Launcher isn't in its list yet. On LG without it: run APL Launcher Setup again. On Android TV: the Downloader code 9890834, or the Setup. *Check for Update* in Settings asks right away. Tried on an LG OLED G5.
 - The Home Screen's hint (*Press ▲ for full screen*) no longer shows through the buttons of a message.
 
 ## 1.1.2
