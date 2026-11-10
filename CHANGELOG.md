@@ -1,5 +1,8 @@
 # Changelog
 
+## Next version (not released yet)
+- **After a full start, the launcher comes back at once even when Autorun Smart Hub was off.** The screen then showed Samsung TV Plus or the TV input, and the launcher only 30 to 60 s later, when APL Boot started by itself (an S90F, also with Vetro's *Custom launcher*). Autorun Smart Hub is off at such a start when Vetro's *Custom launcher* is on, or when the restart went through a standby (APL Overlay keeps it off then, so that a wake shows no Samsung home). The launcher, which the screen loads behind the TV input about a second after power on (seen on the M8), now starts APL Boot at once, and APL Boot puts it in front. Apps2Samsung package only. Not tried on a screen yet.
+
 ## 1.1.3
 - **LG: Close Unused Apps**, as on Samsung (rooted TV). An app left 10 minutes in the background closes on its own, and one the TV opened by itself and you never used (LG Channels) after 1 minute: the TV keeps its memory and the launcher stays smooth. Never the app in front, live TV, the inputs, AirPlay, or an app playing sound or video. *Settings › Apps › Close Unused Apps* turns it off. On an LG OLED G5, the swap had grown to 458 MB without it.
 - **LG: the apps you don't use never open.** LG preloads LG Channels in the background at every start: its start page is now covered in RAM by a blank one that closes at once (`apl-noload.sh`, the list in `noload.list`). Nothing is written in the system, and one command gives it back. Run the root install once more (APL Launcher Setup, or the one command in the README) to get it.

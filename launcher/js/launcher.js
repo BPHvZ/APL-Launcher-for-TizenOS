@@ -1050,6 +1050,24 @@
         });
     }
 
+    /* After a full start (power cut, restart) the screen can come back on the TV input or Samsung TV Plus, with
+       the launcher, its home app, already loaded behind it. That happens when Autorun Smart Hub is off at that
+       start: Vetro's Custom launcher switches it off, and APL Overlay keeps it off during a standby that the
+       restart went through. Nothing put the launcher in front then until APL Boot's own on-boot start, 30 to
+       60 s later (an S90F). So APL Boot is started as soon as the launcher loads: it puts the launcher in front
+       while Samsung's screen is there, leaves an app the screen opened by itself, and does nothing more than
+       5 minutes after a start (overlay/boot/Program.cs). Only the Apps2Samsung package has APL Boot:
+       elsewhere the launch fails, quietly. */
+    function startBootKeeper() {
+        var tz = global.tizen;
+        if (APL.sys.PREVIEW || APL.platform || !tz || !tz.application) return;
+        function plain() { try { tz.application.launch("APLauncher.Boot", null, function () {}); } catch (e) {} }
+        try {
+            tz.application.launchAppControl(new tz.ApplicationControl("http://tizen.org/appcontrol/operation/service"),
+                                            "APLauncher.Boot", null, plain);
+        } catch (e) { plain(); }
+    }
+
     /* The system repeats a key after 350 ms, and the remote only "releases" it after 250 to
        340 ms: on a busy screen, in every app, a short press sometimes counted twice.
        The setting is lost on restart: it is set again at every launch, as soon as Vetro answers. */
@@ -1216,6 +1234,7 @@
     }
 
     function boot() {
+        startBootKeeper();          // first: after a full start, every second counts
         cacheDom();
         dom.hint.querySelector(".hint__text").textContent = APL.t("Press ▲ for full screen");   // index.html only has the English text
         startClock();
