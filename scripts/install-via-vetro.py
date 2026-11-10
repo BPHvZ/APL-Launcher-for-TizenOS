@@ -34,7 +34,7 @@ def request(base, path, payload=None, timeout=60):
 
 def download_latest_full_package(destination):
     request = urllib.request.Request(
-        "https://api.github.com/repos/Knikt/APL-Launcher-for-TizenOS/releases/latest",
+        "https://api.github.com/repos/Knikt/APL-Launcher/releases/latest",
         headers={"Accept": "application/vnd.github+json", "User-Agent": "APL-Launcher-Vetro-Installer"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
