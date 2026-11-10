@@ -373,6 +373,30 @@
         launch: launch,
         loadApps: loadApps, launchApp: launchApp, isInstalled: isInstalled, openUrl: openUrl,
         cachedApps: function () { return appsCache || []; },
+        /* A new version is out (updater.js, once per version): how to get it on this TV. With the Homebrew
+           Channel, from its list (and its repository added first, prefilled); without it, APL Launcher Setup. */
+        updateNotice: function (v) {
+            var HBC = "org.webosbrew.hbchannel", REPO = "https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/repo/apps.json";
+            var hbc = (appsCache || []).some(function (a) { return a.id === HBC; });
+            var notes = "";      // version.json's notes are in English: the steps only
+            if (hbc) {
+                APL.alert({
+                    title: t("APL Launcher {v} is available", { v: v.version }),
+                    message: notes + t("To install it: open the Homebrew Channel, choose APL Launcher, then Update. Not in its list yet? Add APL Launcher's repository first, then install it from the list. Your settings, the root and your fonts are kept."),
+                    buttons: [
+                        { label: t("Open the Homebrew Channel"), run: function () { launch(HBC).catch(function () {}); } },
+                        { label: t("Add the Repository"), run: function () { launch(HBC, { launchMode: "addRepository", url: REPO }).catch(function () {}); } },
+                        { label: t("Later") }
+                    ]
+                });
+            } else {
+                APL.alert({
+                    title: t("APL Launcher {v} is available", { v: v.version }),
+                    message: notes + t("To install it, run APL Launcher Setup again on your PC (Your TV › LG). Your settings are kept."),
+                    buttons: [{ label: t("OK") }]
+                });
+            }
+        },
         /* Delete App: on a rooted TV, the apps LG lets you delete (webos/service "remove", up to 40 s) */
         canDelete: function (app) { return !!(app && app.removable && APL.platform.rooted); },
         deleteApp: function (app) {

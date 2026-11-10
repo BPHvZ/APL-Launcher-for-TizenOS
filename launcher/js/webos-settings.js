@@ -32,7 +32,7 @@
         if (SAMSUNG_TYPES[item.type] && !(P.rooted && ROOT_ROWS[item.type + ":" + (item.id || "")])) return true;
         if ((item.type === "toggle" || item.type === "choice") && SAMSUNG_PREFS[item.key]) return true;
         if (item.type === "hide" && item.id === "apl.samsunghome") return true;
-        if (item.type === "action" && (item.label === t("Check for Update") || item.label === t("Go Back to the Installed Version"))) return true;
+        if (item.type === "action" && item.label === t("Go Back to the Installed Version")) return true;   // Check for Update stays: it says how to update (updater.js)
         // Samsung's own resets (its picture and sound service)
         if (item.type === "action" && (item.label === t("Reset Picture") || item.label === t("Reset Equalizer"))) return true;
         if (item.type === "info" && item.label === "HDR" && sys.hdr() === "—") return true;

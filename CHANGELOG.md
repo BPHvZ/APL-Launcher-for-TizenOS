@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3
+- **LG and Android TV: the launcher says when a new version is out.** They can't update themselves like Samsung: once per version, on the Home Screen, a message gives the new version and how to get it. On LG with the Homebrew Channel: *Open the Homebrew Channel* (then APL Launcher › Update), or *Add the Repository* (its address already typed in) when APL Launcher isn't in its list yet. On LG without it: run APL Launcher Setup again. On Android TV: the Downloader code 9890834, or the Setup. *Settings › General & Privacy › Updates › Check for Update* asks right away. Tried on an LG OLED G5.
+- The Home Screen's hint (*Press ▲ for full screen*) no longer shows through the buttons of a message.
+
 ## 1.1.2
 - **LG: Delete App.** Hold OK on an app, then *Delete App*, as on Samsung: on a rooted TV, for every app LG itself lets you delete (TF1+, M6+, france.tv, Rakuten TV…). LG's system apps (LG Channels, Alexa…) don't offer it. Since Home opens APL Launcher, LG's own menu to delete apps was out of reach. Tried on an LG OLED G5: TF1+ and M6+ deleted in 3 s each.
 - **LG: root kept after every update.** Updating the launcher (from the Homebrew Channel, APL Launcher Setup or ares-install) took root away from its service until the next restart: no picture settings, no closing of apps, and Guide gave a black screen. A watcher started at every boot (`apl-keep-root.sh`) gives root back within seconds, and puts back the files a public package can't have: the SF Pro fonts, your API keys, your avatars. Run the root install once more (APL Launcher Setup, or the one command in the README) to get it.

@@ -38,6 +38,17 @@ window.APL_LANG_FR = {
     "Couldn't delete “{name}” (system app, or Vetro stopped). You can hide it.": "Impossible de supprimer « {name} » (app système, ou Vetro arrêté). Tu peux la masquer.",
     "“{name}” is part of the TV's system and can't be deleted. You can hide it.": "« {name} » fait partie du système de la TV et ne peut pas être supprimée. Tu peux la masquer.",
     "Couldn't delete “{name}”. You can hide it.": "Impossible de supprimer « {name} ». Tu peux la masquer.",
+    "APL Launcher {v} is available": "APL Launcher {v} est disponible",
+    "To install it: open the Homebrew Channel, choose APL Launcher, then Update. Not in its list yet? Add APL Launcher's repository first, then install it from the list. Your settings, the root and your fonts are kept.":
+        "Pour l'installer : ouvre le Homebrew Channel, choisis APL Launcher, puis Update. Pas encore dans sa liste ? Ajoute d'abord le dépôt d'APL Launcher, puis installe-le depuis la liste. Tes réglages, le root et tes polices sont gardés.",
+    "To install it, run APL Launcher Setup again on your PC (Your TV › LG). Your settings are kept.":
+        "Pour l'installer, relance APL Launcher Setup sur ton PC (Ta TV › LG). Tes réglages sont gardés.",
+    "To install it: in the Downloader app, type the code 9890834, then install. Or run APL Launcher Setup again on your PC. Your settings are kept.":
+        "Pour l'installer : dans l'app Downloader, tape le code 9890834, puis installe. Ou relance APL Launcher Setup sur ton PC. Tes réglages sont gardés.",
+    "Open the Homebrew Channel": "Ouvrir le Homebrew Channel",
+    "Add the Repository": "Ajouter le dépôt",
+    "Later": "Plus tard",
+    "OK": "OK",
     "Move the app with the arrows, then press OK": "Déplace l'app avec les flèches, puis appuie sur OK",
     "Tip: ⏯ opens Control Center, and Home twice shows open apps": "Astuce : ⏯ ouvre le Centre de contrôle, et 2 fois Home les apps ouvertes",
     "Connection": "Connexions",

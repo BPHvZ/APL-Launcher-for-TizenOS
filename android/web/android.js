@@ -381,6 +381,14 @@
             return B.launchWith(String(id), key, String(params[key])) ? Promise.resolve() : fail(T("Can't launch the app"));
         },
         packages: { setPackageInfoEventListener: function (l) { pkgListener = l; } },
+        /* A new version is out (updater.js, once per version): how to get it on Android */
+        updateNotice: function (v) {
+            APL.alert({
+                title: T("APL Launcher {v} is available", { v: v.version }),
+                message: T("To install it: in the Downloader app, type the code 9890834, then install. Or run APL Launcher Setup again on your PC. Your settings are kept."),
+                buttons: [{ label: T("OK") }]
+            });
+        },
         /* Delete App: Android's own Uninstall? question (B.uninstall, through the launcher's /components/action) */
         canDelete: function () { return !!B.uninstall; },
         /* The launcher's own tiles: no Sources yet; Smart Hub becomes the device's own home */

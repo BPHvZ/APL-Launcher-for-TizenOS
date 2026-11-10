@@ -1113,7 +1113,7 @@ html, body {
 .wdg.is-on { display: block; animation: wdgIn 240ms ease; }
 @keyframes wdgIn { from { opacity: 0; } to { opacity: 1; } }
 .mode-grid .wdg { display: none; }
-.has-wdg .hint { opacity: 0; }
+.has-wdg .hint, .has-alert .hint { opacity: 0; }
 .wdg__bg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: linear-gradient(120deg, #20409a 0%, #1476a8 55%, #0f8f96 100%); }
 .wdg__blur { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 240ms ease; }
 .wdg__row { position: absolute; left: 90px; top: 96px; display: flex; gap: 44px; }
