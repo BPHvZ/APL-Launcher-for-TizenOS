@@ -283,6 +283,7 @@ var GUIDE = "com.webos.app.livemenu", lastApp = "", guideAt = 0;
 var NOT_AN_APP = /^(com\.webos\.app\.(home|livemenu|starfish.*|.*systemui.*|quicksettings|volume.*)|com\.knikt\.apllauncher)$/;
 function onLife(p) {
     var id = String(p.appId || ""), ev = String(p.event || "");
+    idleLife(id, ev);
     if (ev === "foreground") {
         if (id === APP || id === "com.webos.app.home") lastApp = "";
         else if (!NOT_AN_APP.test(id)) lastApp = id;
@@ -297,12 +298,69 @@ function onLife(p) {
 function watchApps() {
     var sub = service.subscribe("luna://com.webos.applicationManager/getAppLifeEvents", { subscribe: true });
     ssap.note("watching app launches for Guide");
-    sub.on("response", function (m) { if (!fs.existsSync(ROOT_DIR + "/OFF-guide")) onLife(m && m.payload || {}); });
+    sub.on("response", function (m) {
+        var p = m && m.payload || {};
+        if (!fs.existsSync(ROOT_DIR + "/OFF-guide")) onLife(p);
+        else idleLife(String(p.appId || ""), String(p.event || ""));
+    });
     sub.on("cancel", function () { setTimeout(watchApps, 5000); });
 }
+
+/* ---------- Close Unused Apps (rooted TV), as APL Overlay does on Samsung ----------
+   An app left 10 minutes in the background closes on its own; one the TV opened by itself and you never used
+   (LG Channels, which LG keeps preloaded) after 1 minute. Never the app in front, the launcher and its Home
+   page, live TV, the inputs, AirPlay, nor an app playing sound or video. The TV keeps its memory, and the
+   launcher stays smooth. Settings › Apps › Close Unused Apps turns it off (service "idle"). */
+var idleOn = true, bgSince = {}, hidden = {}, frontApp = "";
+var NEVER_CLOSE = /^(com\.knikt\.apllauncher|com\.webos\.app\.(home|livetv|hdmi\d*|inputcommon|livemenu|.*systemui.*|airplay|screensaver|tvhotkey)|airplay)$/;
+var PRELOADED = { "com.webos.app.lgchannels": 1 };
+function idleLife(id, ev) {
+    if (!id) return;
+    if (ev === "foreground") { frontApp = id; delete bgSince[id]; delete hidden[id]; }
+    else if (ev === "background") { bgSince[id] = Date.now(); if (frontApp === id) frontApp = ""; }
+    else if (ev === "launch" || ev === "splash") { if (frontApp !== id && !(id in bgSince)) { hidden[id] = true; bgSince[id] = Date.now(); } }
+    else if (ev === "close" || ev === "stop") { delete bgSince[id]; delete hidden[id]; }
+}
+// The apps that play sound or video now (the media server's pipelines): never closed
+function playing(cb) {
+    service.call("luna://com.webos.media/getActivePipelines", {}, function (m) {
+        var out = {}, list = m && m.payload;
+        (Array.isArray(list) ? list : []).forEach(function (p) {
+            var id = String(p.appid || p.appId || "");
+            if (id && p.type !== "vtclient") out[id] = true;
+        });
+        cb(out);
+    });
+}
+function idleTick() {
+    if (!idleOn || fs.existsSync(ROOT_DIR + "/OFF-idleclose")) return;
+    service.call("luna://com.webos.applicationManager/running", {}, function (m) {
+        var apps = (m && m.payload && m.payload.running) || [];
+        playing(function (busy) {
+            var now = Date.now();
+            apps.forEach(function (a) {
+                var id = String(a.id || "");
+                if (!id || id === frontApp || NEVER_CLOSE.test(id) || busy[id]) return;
+                if (!(id in bgSince)) { bgSince[id] = now; if (PRELOADED[id]) hidden[id] = true; return; }   // first seen behind: counted from now
+                var limit = hidden[id] ? 60000 : 10 * 60000;
+                if (now - bgSince[id] < limit) return;
+                service.call("luna://com.webos.applicationManager/closeByAppId", { id: id }, function () {});
+                ssap.note("closed " + id + (hidden[id] ? " (opened by the TV, never used)" : " (10 min in the background)"));
+                delete bgSince[id]; delete hidden[id];
+            });
+        });
+    });
+}
+service.register("idle", guard(function (message) {
+    var p = message.payload || {};
+    if (typeof p.on === "boolean") idleOn = p.on;
+    message.respond({ returnValue: true, on: idleOn, root: ROOT });
+}));
 if (ROOT) {
     stayAwake();
     watchApps();
+    service.call("luna://com.webos.applicationManager/getForegroundAppInfo", {}, function (m) { frontApp = String(m && m.payload && m.payload.appId || frontApp); });
+    setInterval(idleTick, 30000);
 }
 
 /* ---------- APL TV's Top Shelf ----------

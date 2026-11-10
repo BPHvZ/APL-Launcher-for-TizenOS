@@ -394,9 +394,13 @@
         if (D) {
             if (P.oled) D.screensaverClockMove = 2;      // as on Samsung's OLEDs: the clock goes round the corners
             // Samsung-only parts: no Smart Hub rows, no Vetro, no APL Overlay, no updates from GitHub yet
-            D.hubShelf = false; D.homeReturn = false; D.alexaBridge = false; D.idleClose = false; D.bootCleanup = false; D.autoUpdate = false;
+            D.hubShelf = false; D.homeReturn = false; D.alexaBridge = false; D.bootCleanup = false; D.autoUpdate = false;
+            D.idleClose = true;                       // done by the launcher's service on a rooted TV (webos/service, "idle")
             D.lgHomeApl = true;                       // read from the TV at each start (readHome)
         }
+        // Close Unused Apps: the launcher's service closes them (rooted TV); this setting turns it on or off there
+        P.onRoot(function (on) { if (on) P.service("idle", { on: sys.pref("idleClose") !== false }).catch(function () {}); });
+        sys.onPref("idleClose", function (v) { if (P.rooted) P.service("idle", { on: !!v }).catch(function () {}); });
         sys.platform = "webos";
         sys.audio = audio;
         sys.network = network;
