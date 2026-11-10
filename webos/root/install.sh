@@ -64,7 +64,9 @@ fetch "$APL/apl-services-stop.sh"  bin/apl-services-stop.sh
 fetch "$APL/apl-services-undo.sh"  bin/apl-services-undo.sh
 fetch "$APL/apl-home.sh"           bin/apl-home.sh
 fetch "$APL/apl-home-undo.sh"      bin/apl-home-undo.sh
+fetch "$APL/apl-keep-root.sh"      bin/apl-keep-root.sh
 fetch "$APL/uninstall.sh"          uninstall.sh
+mkdir -p "$APL/personal"
 mkdir -p "$APL/home"
 fetch "$APL/home/index.html"       home/index.html
 fetch "$APL/home/appinfo.json"     home/appinfo.json
@@ -79,12 +81,34 @@ fetch "$HOOK/11-apl-block-privacy"   init.d/11-apl-block-privacy
 fetch "$HOOK/12-apl-debloat"         init.d/12-apl-debloat
 fetch "$HOOK/13-apl-services-stop"   init.d/13-apl-services-stop
 fetch "$HOOK/20-apl-elevate"         init.d/20-apl-elevate
+fetch "$HOOK/21-apl-keep-root"       init.d/21-apl-keep-root
 fetch "$HOOK/30-apl-home"            init.d/30-apl-home
 
 echo
 echo "Giving APL Launcher's service root (picture settings, closing apps)"
 sh "$HOOK/20-apl-elevate"
 pkill -f com.knikt.apllauncher.service 2>/dev/null || true
+
+# Your own files (SF Pro fonts, keys, avatars) that are in the launcher now are kept in personal/, so an
+# update (the Homebrew Channel's public package has none of them) gets them back
+ME=/media/developer/apps/usr/palm/applications/com.knikt.apllauncher
+if [ -d "$ME" ]; then
+    for d in fonts sounds images/avatars/custom images/avatars/memoji; do
+        for f in "$ME/$d"/*; do
+            case "$f" in *.md|*.txt|*.css|*"*") continue ;; esac
+            [ -f "$f" ] && mkdir -p "$APL/personal/$d" && cp "$f" "$APL/personal/$d/"
+        done
+    done
+    if [ -s "$ME/js/keys.local.js" ] && ! grep -q 'tmdb: *""' "$ME/js/keys.local.js"; then
+        mkdir -p "$APL/personal/js" && cp "$ME/js/keys.local.js" "$APL/personal/js/"
+    fi
+    [ -f "$ME/js/avatars.local.js" ] && mkdir -p "$APL/personal/js" && cp "$ME/js/avatars.local.js" "$APL/personal/js/"
+fi
+
+echo "Keeping root and your files after every update of the launcher (apl-keep-root.sh)"
+if [ -f /tmp/apl-keep-root.pid ]; then kill "$(cat /tmp/apl-keep-root.pid)" 2>/dev/null || true; fi
+rm -f /tmp/apl-keep-root.pid
+sh "$HOOK/21-apl-keep-root"
 
 printf '%s\n' "$APL_VERSION" > "$APL/VERSION"
 if [ -n "$SRC" ]; then echo setup > "$APL/BRANCH"; else printf '%s\n' "$BRANCH" > "$APL/BRANCH"; fi
