@@ -7,8 +7,12 @@ project's license next to them (images/avatars/memoji/LICENSE.txt).
 
     from memoji import fetch
     names = fetch("<package>/images/avatars/memoji")      # ["memoji/1.png", …], [] without network
+
+    python3 tools/memoji.py <package>/images/avatars/memoji <package>/js/avatars.local.js     (tools/make-package.sh)
+
+Without Pillow (a bare CI machine) the faces are copied as they are (about 40 KB each) instead of resized.
 """
-import os, urllib.request
+import os, shutil, sys, urllib.request
 
 COMMIT = "2044fef695febaf43ddcf58932e39da7f5fe6b60"
 BASE = "https://raw.githubusercontent.com/wimell/tapback-memojis/%s/" % COMMIT
@@ -34,7 +38,10 @@ def _get(url, path):
 
 def fetch(dest):
     """Copies the Memoji into dest (made if needed) and returns their names for js/avatars.local.js."""
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError:
+        Image = None
     cache = cache_dir()
     os.makedirs(cache, exist_ok=True)
     lic = os.path.join(cache, "LICENSE")
@@ -53,11 +60,14 @@ def fetch(dest):
         src = os.path.join(cache, "%d.png" % n)
         if not os.path.exists(src) or os.path.getsize(src) < 1000:
             continue
-        im = Image.open(src).convert("RGBA")
-        im.thumbnail((200, 200), Image.LANCZOS)
-        square = Image.new("RGBA", (200, 200), (0, 0, 0, 0))
-        square.paste(im, ((200 - im.width) // 2, (200 - im.height) // 2), im)
-        square.save(os.path.join(dest, "%d.png" % n))
+        if Image is None:
+            shutil.copyfile(src, os.path.join(dest, "%d.png" % n))
+        else:
+            im = Image.open(src).convert("RGBA")
+            im.thumbnail((200, 200), Image.LANCZOS)
+            square = Image.new("RGBA", (200, 200), (0, 0, 0, 0))
+            square.paste(im, ((200 - im.width) // 2, (200 - im.height) // 2), im)
+            square.save(os.path.join(dest, "%d.png" % n))
         names.append("memoji/%d.png" % n)
     with open(lic, encoding="utf-8") as f:
         text = f.read()
@@ -70,3 +80,13 @@ def fetch(dest):
 def avatars_js(names):
     """js/avatars.local.js for a published package: the Memoji, no personal avatar."""
     return "window.APL_CUSTOM_AVATARS = [];\nwindow.APL_MEMOJI = [%s];\n" % ", ".join('"%s"' % n for n in names)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        sys.exit("usage: memoji.py <images/avatars/memoji folder> <js/avatars.local.js>")
+    found = fetch(sys.argv[1])
+    if found:
+        os.makedirs(os.path.dirname(os.path.abspath(sys.argv[2])), exist_ok=True)
+        with open(sys.argv[2], "w", encoding="utf-8", newline="\n") as f:
+            f.write(avatars_js(found))

@@ -17,7 +17,9 @@
 #   - js/keys.local.js is keys.example.js with empty keys. Apps2Samsung asks for the TMDB,
 #     YouTube and Fanart.tv keys and writes them in before re-signing
 #     (packaging/apps2samsung/, user_settings). Personal websites stay empty.
-#   - no Memoji or custom avatars, no SF Pro fonts, no personal sounds (never published).
+#   - no custom avatars and no SF Pro fonts (Apple's license). The launcher's own sounds are in, and the
+#     profiles' Memoji, downloaded here from wimell/tapback-memojis (MIT, tools/memoji.py), as APL
+#     Launcher Setup and the Android and LG packages have them.
 #
 # The Overlay .tpk comes from tools/make-overlay.sh (package APLauncher, like the launcher).
 # Inside a hybrid package the web bridge never runs on the screen (its on-boot is dropped, and not
@@ -60,8 +62,10 @@ rsync -a \
     --exclude '*.local.js' --exclude 'keys.example.js' \
     --exclude 'images/avatars/custom/' --exclude 'images/avatars/memoji/' \
     --exclude 'fonts/*.otf' --exclude 'fonts/*.OTF' --exclude 'fonts/*.ttf' --exclude 'fonts/*.TTF' \
-    --exclude 'sounds/*.wav' --exclude '.DS_Store' \
+    --exclude '.DS_Store' \
     "$ROOT/launcher/" "$WORK/ui/"
+# The Memoji of the profiles, and js/avatars.local.js listing them (none without network: the 3D faces then)
+python3 "$ROOT/tools/memoji.py" "$WORK/ui/images/avatars/memoji" "$WORK/ui/js/avatars.local.js"
 
 # Full package: the .NET bridge in the Overlay's .tpk (overlay/bridge) takes the web one's id,
 # APLauncher.Bridge, so the web service is dropped from config.xml. The plain package keeps it.
