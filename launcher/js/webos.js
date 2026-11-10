@@ -409,6 +409,22 @@
         document.addEventListener("visibilitychange", function () { if (document.hidden) ccHandOver(); else ccTakeBack(); });
     }
 
+    /* ---------- LG's own screen saver ----------
+       After two minutes without the remote, the TV asks its apps first (registerScreenSaverRequest) and covers
+       the screen with its own picture unless one answers no, within a few seconds. With the launcher in front and
+       its own screen saver on (Settings › Screen Saver, screensaver.js), the answer is no: the launcher's starts
+       after its own delay, the way it does on Samsung, instead of LG's over the Home Screen. With the launcher's
+       set to Never, or an app in front, LG's runs as before (it protects an OLED screen). */
+    var saverLast = null;               // the last question and answer, for Settings › General › Diagnostics
+    function saverAnswer(m) {
+        if (!m || m.timestamp === undefined) return;
+        var mine = document.visibilityState !== "hidden" && !!APL.sys && +APL.sys.pref("screensaverDelay") > 0;
+        saverLast = { at: Date.now(), ack: !mine };
+        luna("luna://com.webos.service.tvpower/power/responseScreenSaverRequest",
+             { clientName: APP_ID, ack: !mine, timestamp: m.timestamp }, function (r) { saverLast.ok = !!(r && r.returnValue); });
+    }
+    if (!CC) luna("luna://com.webos.service.tvpower/power/registerScreenSaverRequest", { subscribe: true, clientName: APP_ID }, saverAnswer);
+
     connect();
 
     APL.platform = {
@@ -478,6 +494,7 @@
         /* The Control Center over the apps: a page of the launcher instead (Settings, Sources, Search…), with
            the launcher put in front for it (launcher.js runAction) */
         ccOverlay: CC,
+        saverLast: function () { return saverLast; },
         toLauncher: function (action) { return launch(APP_ID, { apl_action: action }).catch(function () {}); },
         /* …and what it changed, for its next opening and for the launcher */
         ccChanged: function () {
