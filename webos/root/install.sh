@@ -65,7 +65,11 @@ fetch "$APL/apl-services-undo.sh"  bin/apl-services-undo.sh
 fetch "$APL/apl-home.sh"           bin/apl-home.sh
 fetch "$APL/apl-home-undo.sh"      bin/apl-home-undo.sh
 fetch "$APL/apl-keep-root.sh"      bin/apl-keep-root.sh
+fetch "$APL/apl-noload.sh"         bin/apl-noload.sh
+fetch "$APL/apl-noload-undo.sh"    bin/apl-noload-undo.sh
 fetch "$APL/uninstall.sh"          uninstall.sh
+mkdir -p "$APL/noload"
+fetch "$APL/noload/index.html"     noload/index.html
 mkdir -p "$APL/personal"
 mkdir -p "$APL/home"
 fetch "$APL/home/index.html"       home/index.html
@@ -80,6 +84,7 @@ fetch "$HOOK/10-apl-block-updates"   init.d/10-apl-block-updates
 fetch "$HOOK/11-apl-block-privacy"   init.d/11-apl-block-privacy
 fetch "$HOOK/12-apl-debloat"         init.d/12-apl-debloat
 fetch "$HOOK/13-apl-services-stop"   init.d/13-apl-services-stop
+fetch "$HOOK/14-apl-noload"          init.d/14-apl-noload
 fetch "$HOOK/20-apl-elevate"         init.d/20-apl-elevate
 fetch "$HOOK/21-apl-keep-root"       init.d/21-apl-keep-root
 fetch "$HOOK/30-apl-home"            init.d/30-apl-home
