@@ -84,12 +84,14 @@
        Reported on Tizen 6.5 (issue #21); the same ids on the M8. Netflix too (org.tizen.netflix-app, on the
        M8 and an S95C reported on Reddit): it was missing from the Home Screen and from Show on Home Screen. */
     var PRELOADED = ["org.tizen.primevideo", "com.samsung.tv.aria-video", "org.tizen.netflix-app"];
+    var THIRD_PARTY_APPS = ["org.omegatube.app"];
     /* Not com.samsung.tv.tvPlusDeeplinker, Samsung TV Plus's entry on Tizen 6.5: launched alone it doesn't
        open TV Plus (#21). The Samsung TV Plus app from the store (HEPsqFNie0.tvplusstandalone) is listed. */
     function isRealApp(id, name) {
         if (FAVORITES.indexOf(id) !== -1 || isTizenTube(id, name)) return true;
         if (PRELOADED.indexOf(id) !== -1) return true;
         if (/^org\.tizen\.browser/.test(id)) return true;
+        if (THIRD_PARTY_APPS.indexOf(id) !== -1) return true;
         if (/^vetrotvapp/i.test(id) || /^vetro$/i.test(String(name || "").trim())) return true;
         if (STORE_ID.test(id)) return true;                                // Samsung App Store
         var n = String(name || "").trim();
