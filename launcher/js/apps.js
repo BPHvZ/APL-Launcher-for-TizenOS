@@ -29,6 +29,7 @@
     /* TizenTube: by its name (TizenTube, TizenTube Cobalt…) or its package xvvl3S1TT1. */
     function isTizenTube(id, name) { return /tizen ?tube/i.test(String(name || "")) || /^xvvl3S1TT1\./.test(id); }
     var META = {
+        "org.omegatube.app":            { name: "OmegaTube", eyebrow: "VIDEO", live: "youtube" },
         "AquaPlay02.AquaPlay":            { eyebrow: "TELEVISION", live: "trending" },
         "xvvl3S1bvH.TizenBrewStandalone": { name: "TizenBrew",  accent: "#1fb6e6", eyebrow: "APPS", tile: "images/tile-tizenbrew.png", live: "youtube" },
         "6YLB5zo9te.HotIptv":             { name: "Hot IPTV",   accent: "#ff7a1a", eyebrow: "TELEVISION",   bg: "images/bg-hotiptv.jpg", tile: "images/tile-hotiptv.png", live: "trending" },
