@@ -216,6 +216,38 @@ def create_configured_wgt(source, destination, settings):
         output.writestr(config_path, contents.encode("utf-8"))
 
 
+def patch_omegatube_wgt(source, destination):
+    apps_path = "res/wgt/js/apps.js"
+    meta_entry = '        "org.omegatube.app":            { name: "OmegaTube", eyebrow: "VIDEO", live: "youtube" },\n'
+    allowlist_entry = '    var THIRD_PARTY_APPS = ["org.omegatube.app"];\n'
+    app_filter = '        if (THIRD_PARTY_APPS.indexOf(id) !== -1) return true;\n'
+    with zipfile.ZipFile(source, "r") as original, zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as output:
+        names = original.namelist()
+        if apps_path not in names:
+            raise RuntimeError("Full WGT is missing launcher app discovery code")
+        apps = original.read(apps_path).decode("utf-8")
+        if meta_entry not in apps:
+            anchor = "    var META = {\n"
+            if apps.count(anchor) != 1:
+                raise RuntimeError("Could not safely locate the app metadata table")
+            apps = apps.replace(anchor, anchor + meta_entry, 1)
+        if allowlist_entry not in apps:
+            preloaded = re.compile(r"(?m)^(    var PRELOADED = \[[^\n]*\];\n)")
+            apps, count = preloaded.subn(r"\1" + allowlist_entry, apps, count=1)
+            if count != 1:
+                raise RuntimeError("Could not safely locate the third-party app allowlist")
+        if app_filter not in apps:
+            browser_filter = "        if (/^org\\.tizen\\.browser/.test(id)) return true;\n"
+            if apps.count(browser_filter) != 1:
+                raise RuntimeError("Could not safely locate the installed-app filter")
+            apps = apps.replace(browser_filter, browser_filter + app_filter, 1)
+        if meta_entry not in apps or allowlist_entry not in apps or app_filter not in apps:
+            raise RuntimeError("OmegaTube fix did not pass verification")
+        for entry in original.infolist():
+            content = apps.encode("utf-8") if entry.filename == apps_path else original.read(entry.filename)
+            output.writestr(entry, content)
+
+
 def sign_package(source, destination, duid, signer):
     command = [signer, "sign", str(source), "-o", str(destination), "--duids", duid, "--partner"]
     result = subprocess.run(command, text=True, capture_output=True)
@@ -231,12 +263,15 @@ def main():
     parser.add_argument("package", nargs="?", type=Path, help="Full hybrid release .wgt package (omit to fetch and verify the latest full release package)")
     parser.add_argument("--vetro-port", type=int, default=8099, help="Vetro HTTP port (default: 8099)")
     parser.add_argument("--configure", action="store_true", help="Privately enter API keys and personal websites before signing and installing")
+    parser.add_argument("--omegatube-fix", action="store_true", help="Include OmegaTube in installed apps and enable its YouTube Top Shelf")
     parser.add_argument("--duid", help="TV DUID covered by the Partner certificate (required with --configure)")
     parser.add_argument("--apps2samsung-cli", help="Apps2Samsung CLI executable (default: apps2samsung-cli on PATH)")
     parser.add_argument("--no-launch", action="store_true", help="Do not launch after installation")
     args = parser.parse_args()
     if not 1 <= args.vetro_port <= 65535:
         parser.error("Vetro port must be between 1 and 65535")
+    if args.omegatube_fix and not args.configure:
+        parser.error("--omegatube-fix requires --configure so the patched full WGT can be re-signed")
     if not re.fullmatch(r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}", args.tv_ip):
         parser.error("TV address must be an IPv4 address")
     if args.package and (not args.package.is_file() or args.package.suffix.lower() != ".wgt"):
@@ -262,9 +297,14 @@ def main():
         temporary = tempfile.TemporaryDirectory(prefix="apl-vetro-install-")
         atexit.register(temporary.cleanup)
         customized = Path(temporary.name) / "customized.wgt"
+        package_to_sign = customized
         signed = Path(temporary.name) / "signed.wgt"
         create_configured_wgt(package_path, customized, settings)
-        sign_package(customized, signed, args.duid, signer)
+        if args.omegatube_fix:
+            package_to_sign = Path(temporary.name) / "omegatube-full.wgt"
+            patch_omegatube_wgt(customized, package_to_sign)
+            print("Included OmegaTube in the app allowlist and YouTube Top Shelf metadata.")
+        sign_package(package_to_sign, signed, args.duid, signer)
         package_path = signed
 
     package = package_path.read_bytes()
