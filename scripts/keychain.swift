@@ -6,7 +6,7 @@ guard let action = request["action"], let service = request["service"] else {
     fputs("Invalid Keychain request\n", stderr)
     exit(2)
 }
-let account = "APL Launcher"
+let account = request["account"] ?? "APL Launcher"
 let query: [String: Any] = [
     kSecClass as String: kSecClassGenericPassword,
     kSecAttrService as String: service,

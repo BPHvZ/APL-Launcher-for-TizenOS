@@ -6,6 +6,7 @@ import atexit
 import base64
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -20,16 +21,30 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 CHUNK_SIZE = 36_000
+VETRO_KEYCHAIN_SERVICE = "Knikt.APL-Launcher.Vetro"
+_VETRO_TOKEN_CACHE = {}
 
 
 def request(base, path, payload=None, timeout=60):
     data = json.dumps(payload).encode() if payload is not None else None
+    headers = {"Content-Type": "application/json"} if data is not None else {}
+    token = _vetro_token(base)
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(
         f"{base}{path}", data=data,
-        headers={"Content-Type": "application/json"} if data is not None else {},
+        headers=headers,
     )
     with urllib.request.urlopen(req, timeout=timeout) as response:
         return json.load(response)
+
+
+def _vetro_token(base):
+    if base not in _VETRO_TOKEN_CACHE:
+        account = urlsplit(base).netloc
+        result = keychain_request("get", VETRO_KEYCHAIN_SERVICE, account=account)
+        _VETRO_TOKEN_CACHE[base] = result.get("value", "") if result else ""
+    return _VETRO_TOKEN_CACHE[base]
 
 
 def download_latest_full_package(destination):
@@ -67,11 +82,12 @@ def exec_vetro(base, command, timeout=60):
     return str(result.get("output", ""))
 
 
-def keychain_request(action, service, value=None):
+def keychain_request(action, service, value=None, account="APL Launcher"):
     helper = Path(__file__).with_name("keychain.swift")
     if sys.platform != "darwin" or not helper.is_file():
         return None
     payload = {"action": action, "service": service}
+    payload["account"] = account
     if value is not None:
         payload["value"] = value
     result = subprocess.run(
@@ -81,6 +97,68 @@ def keychain_request(action, service, value=None):
     if result.returncode:
         raise RuntimeError("macOS Keychain operation failed; no API key was displayed")
     return json.loads(result.stdout)
+
+
+def website_config_path():
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "APL-Launcher" / "websites.json"
+    if os.name == "nt":
+        root = Path(os.environ.get("APPDATA", Path.home()))
+        return root / "APL-Launcher" / "websites.json"
+    root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    return root / "apl-launcher" / "websites.json"
+
+
+def valid_website(site):
+    if not isinstance(site, dict):
+        raise ValueError("Saved website entry must be an object")
+    name, url = site.get("name"), site.get("url")
+    if not isinstance(name, str) or not name.strip() or len(name) > 80 or any(ord(c) < 32 for c in name):
+        raise ValueError("Saved website has an invalid name")
+    if not isinstance(url, str):
+        raise ValueError("Saved website has an invalid URL")
+    parsed = urlsplit(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or any(c.isspace() for c in url):
+        raise ValueError("Saved website URL must be an http(s) URL without whitespace or credentials")
+    return {"name": name.strip(), "url": url.strip()}
+
+
+def load_saved_websites():
+    path = website_config_path()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+    if not isinstance(data, dict) or not isinstance(data.get("webApps"), list):
+        raise ValueError(f"Saved website config is invalid: {path}")
+    return [valid_website(site) for site in data["webApps"]]
+
+
+def save_websites(sites):
+    path = website_config_path()
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    payload = json.dumps({"webApps": [valid_website(site) for site in sites]}, ensure_ascii=False, indent=2) + "\n"
+    fd, temp_name = tempfile.mkstemp(prefix=".websites-", dir=path.parent)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as temp:
+            temp.write(payload)
+            temp.flush()
+            os.fsync(temp.fileno())
+        os.replace(temp_name, path)
+        os.chmod(path, 0o600)
+    finally:
+        if os.path.exists(temp_name):
+            os.unlink(temp_name)
+
+
+def add_saved_website(name, url):
+    site = valid_website({"name": name, "url": url})
+    sites = load_saved_websites()
+    if site not in sites:
+        sites.append(site)
+        save_websites(sites)
+    return sites
 
 
 def collect_settings():
@@ -107,18 +185,18 @@ def collect_settings():
             keychain_request("set", f"com.knikt.apl-launcher.{field}", typed)
         keys[field] = value
 
-    sites = []
+    sites = load_saved_websites()
+    if sites:
+        print(f"Using {len(sites)} website(s) saved locally.")
     while True:
         name = input("Website name (press Enter when finished): ").strip()
         if not name:
             break
         url = input("Website URL (http:// or https://): ").strip()
-        parsed = urlsplit(url)
-        if not name or len(name) > 80 or any(ord(c) < 32 for c in name):
-            raise ValueError("Website name must be 1–80 printable characters")
-        if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or any(c.isspace() for c in url):
-            raise ValueError("Website URL must be an http(s) URL without whitespace or credentials")
-        sites.append({"name": name, "url": url})
+        site = valid_website({"name": name, "url": url})
+        if site not in sites:
+            sites.append(site)
+            save_websites(sites)
         if len(sites) >= 30:
             break
     keys["webApps"] = sites
